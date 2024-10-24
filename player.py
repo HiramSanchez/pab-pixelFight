@@ -51,7 +51,7 @@ class Player():
     #==================#
     #==#  Movement  #==#
     #==================#
-    def move(self, screen_width, screen_height, surface, target):
+    def move(self, screen_width, screen_height, surface, target, round_over):
         SPEED = 10
         GRAVITY = 2
         dx = 0
@@ -63,7 +63,7 @@ class Player():
         key = pygame.key.get_pressed()
         
         # Controlls
-        if self.attacking == False and self.alive == True:
+        if self.attacking == False and self.alive == True and round_over == False:
             
             # player 1
             if self.player == 1:
@@ -137,7 +137,7 @@ class Player():
         self.rect.y += dy
         
         
-    #===================#
+    #===================# 
     #==#  Animation  #==#
     #===================#
     def update(self): #handle animation updates

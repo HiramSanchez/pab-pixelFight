@@ -16,11 +16,11 @@
 - **Local Multiplayer** (2 players on the same device)  
 - **Basic Combat Mechanics** (attack, move, block)  
 - **Health Bars** and **Round Timer**  
-- **Sound Effects**
+- **Sound Effects**  
 
 ## 🛠️ Tech Used  
 - Python 3.13.0  
-- Pygame
+- Pygame library
 
 ## 🚀 Getting Started
 
