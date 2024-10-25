@@ -1,5 +1,4 @@
 import pygame
-
 class Player():
     
     #========================#
@@ -10,6 +9,7 @@ class Player():
         self.size = data[0]
         self.image_scale = data[1]
         self.offset = data[2]
+        self.fighter_name = data[3]
         self.flip = flip
         self.animation_list = self.load_images(sprite_sheet, animation_steps)
         self.action = 0
@@ -26,8 +26,16 @@ class Player():
         self.alive = True
         self.attack_type = 0
         self.attack_cooldown = 0
-        self.health = 50
+        self.health = 100
         self.energy = 0
+        # Spec Moves
+        self.dashing = False
+        self.dash_speed = 20  # Speed of dash
+        self.dash_duration = 180  # duration in miliseconds
+        self.dash_start_time = 0 
+        self.frozen = False
+        self.frozen_duration = 2000 # duration in miliseconds
+        self.freeze_start_time = 0 
         
     #======================#
     #==#  Load Sprites  #==#
@@ -66,7 +74,7 @@ class Player():
         key = pygame.key.get_pressed()
         
         # Controlls
-        if self.attacking == False and self.alive == True and round_over == False:
+        if self.attacking == False and self.alive == True and round_over == False and self.frozen == False:
             
             # player 1
             if self.player == 1:
@@ -89,6 +97,7 @@ class Player():
                         self.jump = True
                     # attack
                     self.handle_attacks(key, surface, target)
+                    self.handle_spec_attacks(key, surface, target)
             
             # player 2  
             if self.player == 2:
@@ -111,6 +120,22 @@ class Player():
                         self.jump = True
                     # attack
                     self.handle_attacks(key, surface, target)
+                    self.handle_spec_attacks(key, surface, target)
+        
+        # Spec Move: Dash
+        if self.dashing:
+            if pygame.time.get_ticks() - self.dash_start_time < self.dash_duration:
+                dx = self.dash_speed if not self.flip else -self.dash_speed
+            else:
+                self.dashing = False
+                self.attack_cooldown = 30
+                
+        # Spec Status: Freeze
+        if self.frozen:
+            if pygame.time.get_ticks() - self.freeze_start_time < self.frozen_duration:
+                self.frozen = True
+            else:
+                self.frozen = False
                 
         # apply gravity
         self.vel_y += GRAVITY
@@ -127,10 +152,7 @@ class Player():
             dy = screen_height - 110 - self.rect.bottom
              
         # ensure player face each other
-        if target.rect.centerx > self.rect.centerx:
-            self.flip = False
-        else:
-            self.flip = True
+        self.flip = target.rect.centerx < self.rect.centerx
         
         # apply attack cooldown
         if self.attack_cooldown >0:
@@ -158,6 +180,15 @@ class Player():
                 elif key[pygame.K_PERIOD]:
                     self.attack_type = 2
                 self.attack(surface, target)
+                
+    def handle_spec_attacks(self, key, surface, target):
+        if ( key[pygame.K_4] and self.player == 1 and self.energy == 100) or (key[pygame.K_SLASH] and self.player == 2 and self.energy == 100):
+            if self.fighter_name == "Bam":
+                self.attack_type = 3
+                self.dash_attack(surface, target)
+            if self.fighter_name == "Onichan":
+                self.attack_type = 3
+                self.freeze_attack(surface, target)
         
     #===================# 
     #==#  Animation  #==#
@@ -179,6 +210,8 @@ class Player():
                 self.update_action(4) #4: attack 1
             elif self.attack_type == 2:
                 self.update_action(5) #5: attack 2
+            elif self.attack_type == 3:
+                self.update_action(6) #6: attack 3
         elif self.jump == True:
             self.update_action(3) #3: jump
         elif self.running == True:
@@ -187,35 +220,62 @@ class Player():
             self.update_action(0) #0: idle
         
         # updates image
-        animation_cooldown = 60 #sprite speed
+        animation_cooldown = 50 # sprite speed
         self.image = self.animation_list[self.action][self.frame_index]
         if pygame.time.get_ticks() - self.update_time > animation_cooldown: # Checks time to update
             self.frame_index += 1
             self.update_time = pygame.time.get_ticks()
         # Checks if the animation finished
         if self.frame_index >= len(self.animation_list[self.action]):
-            if self.alive== False:
+            if self.alive == False:
                 self.frame_index = len(self.animation_list[self.action]) - 1
             else:
                 self.frame_index = 0 # restart sprite
                 # Checks if the attack was excecuted
-                if self.action == 4 or self.action == 5:
+                if self.action == 4 or self.action == 5 or self.action == 6:
                     self.attacking = False
                     self.attack_cooldown = 30 # attack cooldown
                 # Checks if damage was taken
                 if self.action == 8:
-                    self.hit = False
-                    self.attacking = False
-                    self.attack_cooldown = 30 # hurt cooldown
+                    if self.frozen:
+                        self.frame_index = len(self.animation_list[self.action]) - 1
+                    else:
+                        self.hit = False
+                        self.attacking = False
+                        self.attack_cooldown = 30 # hurt cooldown
             
             
-    #================#
-    #==#  Attack  #==#
-    #================#
+    #=================#
+    #==#  Attacks  #==#
+    #=================#
+    
+    def dash_attack(self, surface, target):
+        if self.attack_cooldown == 0:
+            self.attacking = True
+            self.dashing = True
+            self.dash_start_time = pygame.time.get_ticks()
+            self.energy -= 100
+            
+            attack_width = self.rect.width * 3.25  # Define dash range
+            attacking_rect = pygame.Rect(
+                self.rect.centerx - (attack_width * self.flip),
+                self.rect.y,
+                attack_width,
+                self.rect.height
+            )
+            # Check if collision happened
+            if attacking_rect.colliderect(target.rect):
+                if target.blocking == False:
+                    target.health -= 25  # Dash Damage
+                    target.hit = True
+
+            # Draw hit area on green for debug
+            pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
+    
     def attack(self, surface, target):
         if self.attack_cooldown == 0:
             self.attacking = True
-                # Config range and attack according to attack type
+            # Config range and attack according to attack type
             if self.attack_type == 1:
                 # Attack Type 1: Low Range More Damage
                 attack_width = self.rect.width * 1.5  
@@ -223,7 +283,7 @@ class Player():
             elif self.attack_type == 2:
                 # Attack Type 2: More Range Low Damage
                 attack_width = self.rect.width * 2
-                damage = 5
+                damage = 6
 
             # Creates attack area
             attacking_rect = pygame.Rect(
@@ -241,6 +301,34 @@ class Player():
                     target.health -= damage
                     target.hit = True
                     self.energy += 20
+
+            # Draw hit area on green for debug
+            pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
+            
+            
+    def freeze_attack(self, surface, target):
+        if self.attack_cooldown == 0:
+            self.attacking = True
+            attack_width = self.rect.width * 1.5
+            damage = 6
+            self.energy -= 100
+
+            # Creates attack area
+            attacking_rect = pygame.Rect(
+                self.rect.centerx - (attack_width * self.flip),
+                self.rect.y,
+                attack_width,
+                self.rect.height
+            )
+
+            # Check if collision happened
+            if attacking_rect.colliderect(target.rect):
+                if target.blocking == False:
+                    target.frozen = True
+                    target.freeze_start_time = pygame.time.get_ticks()
+                    target.health -= damage
+                    target.hit = True
+
 
             # Draw hit area on green for debug
             pygame.draw.rect(surface, (0, 255, 0), attacking_rect)

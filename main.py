@@ -23,7 +23,7 @@ RED = (255,0,0)
 YELLOW = (255,255,0)
 WHITE = (255,255,255)
 BLUE = (0, 0, 255)
-# Game Variables
+# Game Variablesd
 intro_count = 3
 show_fight_time = 1000  # Time that "FIGHT!" shows in miliseconds
 fight_displayed = False
@@ -99,13 +99,13 @@ FIGHTER1_NAME = "Bam"
 FIGHTER1_SIZE = 266.7
 FIGHTER1_SCALE = 0.9
 FIGHTER1_OFFSET = [94,65]
-FIGHTER1_DATA = [FIGHTER1_SIZE, FIGHTER1_SCALE, FIGHTER1_OFFSET]
+FIGHTER1_DATA = [FIGHTER1_SIZE, FIGHTER1_SCALE, FIGHTER1_OFFSET, FIGHTER1_NAME]
 # Scale  Player 2
 FIGHTER2_NAME = "Onichan"
 FIGHTER2_SIZE = 128
 FIGHTER2_SCALE = 2
 FIGHTER2_OFFSET =[44,38]
-FIGHTER2_DATA = [FIGHTER2_SIZE, FIGHTER2_SCALE, FIGHTER2_OFFSET]
+FIGHTER2_DATA = [FIGHTER2_SIZE, FIGHTER2_SCALE, FIGHTER2_OFFSET, FIGHTER2_NAME]
 # Animation Steps
 PLAYER1_ANIMATION_STEPS = [6,8,8,12,6,4,3,2,2,4]
 PLAYER2_ANIMATION_STEPS = [5,6,7,8,4,4,4,4,3,6]
@@ -132,6 +132,13 @@ while run:
     draw_UI_bar(2,FIGHTER2_NAME,fighter_2.health, fighter_2.energy, 780, 55, flip=True)
     draw_skulls(1,score[0], 388, 60)   # Skulls for player 1
     draw_skulls(2,score[1], 580, 60)  # Skulls for player 2
+    
+    if fighter_1.frozen or fighter_2.frozen:
+        if fighter_1.frozen:
+            freeze_overlay = pygame.Surface((128,128), pygame.SRCALPHA)
+            freeze_overlay.fill((0, 0, 255, 100))
+            
+        
 
     # Count & "FIGHT!" screen logic
     if intro_count > 0:
