@@ -99,12 +99,14 @@ FIGHTER1_NAME = "Bam"
 FIGHTER1_SIZE = 266.7
 FIGHTER1_SCALE = 0.9
 FIGHTER1_OFFSET = [94,65]
+FIGHTER1_FREEZE_OFFSET = [-85,-60]
 FIGHTER1_DATA = [FIGHTER1_SIZE, FIGHTER1_SCALE, FIGHTER1_OFFSET, FIGHTER1_NAME]
 # Scale  Player 2
 FIGHTER2_NAME = "Onichan"
 FIGHTER2_SIZE = 128
 FIGHTER2_SCALE = 2
 FIGHTER2_OFFSET =[44,38]
+FIGHTER2_FREEZE_OFFSET = [-88,-75]
 FIGHTER2_DATA = [FIGHTER2_SIZE, FIGHTER2_SCALE, FIGHTER2_OFFSET, FIGHTER2_NAME]
 # Animation Steps
 PLAYER1_ANIMATION_STEPS = [6,8,8,12,6,4,3,2,2,4]
@@ -132,13 +134,6 @@ while run:
     draw_UI_bar(2,FIGHTER2_NAME,fighter_2.health, fighter_2.energy, 780, 55, flip=True)
     draw_skulls(1,score[0], 388, 60)   # Skulls for player 1
     draw_skulls(2,score[1], 580, 60)  # Skulls for player 2
-    
-    if fighter_1.frozen or fighter_2.frozen:
-        if fighter_1.frozen:
-            freeze_overlay = pygame.Surface((128,128), pygame.SRCALPHA)
-            freeze_overlay.fill((0, 0, 255, 100))
-            
-        
 
     # Count & "FIGHT!" screen logic
     if intro_count > 0:
@@ -158,6 +153,7 @@ while run:
         # When "FIGHT!" time has finished, allow movement
         fighter_1.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_2, round_over)
         fighter_2.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_1, round_over)
+
         
     # Update & Draw fighters
     fighter_1.update()
@@ -197,6 +193,28 @@ while run:
             fight_displayed = False
             fighter_1 = Player(1, 200, 310, False, FIGHTER1_DATA, player_1_sheet, PLAYER1_ANIMATION_STEPS)
             fighter_2 = Player(2, 700, 310, True, FIGHTER2_DATA, player_2_sheet, PLAYER2_ANIMATION_STEPS)
+     
+    # Manage frozen status        
+    if fighter_1.frozen or fighter_2.frozen:
+        if fighter_1.frozen:
+            frozenChar = fighter_1
+            frozenOffset = FIGHTER1_FREEZE_OFFSET
+        elif fighter_2.frozen:
+            frozenChar = fighter_2
+            frozenOffset = FIGHTER2_FREEZE_OFFSET
+        # Create Blue mask 
+        enemy_mask = pygame.mask.from_surface(frozenChar.image)
+        blue_effect = pygame.Surface(frozenChar.image.get_size(), pygame.SRCALPHA)
+        for x in range(blue_effect.get_width()):
+            for y in range(blue_effect.get_height()):
+                if enemy_mask.get_at((x, y)):  # mask if pixel
+                    blue_effect.set_at((x, y), (0, 0, 255, 100))  # add transparent blue
+        # flip if char flips
+        if frozenChar.flip:
+            flipped_blue_effect = pygame.transform.flip(blue_effect, True, False)
+            screen.blit(flipped_blue_effect, (frozenChar.rect.x + frozenOffset[0], frozenChar.rect.y + frozenOffset[1]))
+        elif frozenChar.flip == False:    
+            screen.blit(blue_effect, (frozenChar.rect.x + frozenOffset[0], frozenChar.rect.y + frozenOffset[1]))
     
     # Event handler
     for event in pygame.event.get():

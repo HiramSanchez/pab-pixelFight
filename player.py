@@ -27,14 +27,14 @@ class Player():
         self.attack_type = 0
         self.attack_cooldown = 0
         self.health = 100
-        self.energy = 0
+        self.energy = 100
         # Spec Moves
         self.dashing = False
         self.dash_speed = 20  # Speed of dash
-        self.dash_duration = 180  # duration in miliseconds
+        self.dash_duration = 200  # duration in miliseconds
         self.dash_start_time = 0 
         self.frozen = False
-        self.frozen_duration = 2000 # duration in miliseconds
+        self.frozen_duration = 3000 # duration in miliseconds
         self.freeze_start_time = 0 
         
     #======================#
@@ -55,7 +55,7 @@ class Player():
     #==============#
     def draw(self, surface):
         img = pygame.transform.flip(self.image, self.flip, False)
-        pygame.draw.rect(surface, (255,0,0), self.rect)
+        #pygame.draw.rect(surface, (255,0,0), self.rect)
         surface.blit(img, (self.rect.x - (self.offset[0] * self.image_scale), self.rect.y - (self.offset[1] * self.image_scale)))
     
     #==================#
