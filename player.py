@@ -27,7 +27,7 @@ class Player():
         self.attack_type = 0
         self.attack_cooldown = 0
         self.health = 100
-        self.energy = 100
+        self.energy = 10
         # Spec Moves
         self.dashing = False
         self.dash_speed = 20  # Speed of dash
