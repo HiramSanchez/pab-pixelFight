@@ -25,7 +25,7 @@ class Player():
         self.alive = True
         self.attack_type = 0
         self.attack_cooldown = 0
-        self.health = 100
+        self.health = 10
         
     #======================#
     #==#  Load Sprites  #==#
@@ -54,6 +54,7 @@ class Player():
     def move(self, screen_width, screen_height, surface, target, round_over):
         SPEED = 10
         GRAVITY = 2
+        JUMP_HEIGHT = -30
         dx = 0
         dy = 0
         self.running = False
@@ -76,7 +77,7 @@ class Player():
                     self.running = True
                 # jump
                 if key[pygame.K_w] and self.jump == False:
-                    self.vel_y = -33
+                    self.vel_y = JUMP_HEIGHT
                     self.jump = True
                 # attack
                 if key[pygame.K_r] or key[pygame.K_t]:
@@ -97,7 +98,7 @@ class Player():
                     self.running = True
                 # jump
                 if key[pygame.K_UP] and self.jump == False:
-                    self.vel_y = -33
+                    self.vel_y = JUMP_HEIGHT
                     self.jump = True
                 # attack
                 if key[pygame.K_k] or key[pygame.K_l]:
