@@ -63,16 +63,20 @@ def draw_bg():
     scale_bg = pygame.transform.scale(bg_image,(SCREEN_WIDTH,SCREEN_HEIGHT))
     screen.blit(scale_bg,(0,0))
 # Draw health bars
-def draw_health_bar(health, x, y, flip=False):
+def draw_health_bar(fighter_name, health, x, y, flip=False):
     ratio = health / 100
     pygame.draw.rect(screen, WHITE, (x - 2, y - 2, 404, 34))
     pygame.draw.rect(screen, RED, (x, y, 400, 30))
+    name_img = score_font.render(fighter_name, True, WHITE)
     if flip:
         # IF Player 1, Bar reduces to the Right
+        name_rect = name_img.get_rect(midleft=(x + 5, y + 15))
         pygame.draw.rect(screen, GREEN, (x + (400 * (1 - ratio)), y, 400 * ratio, 30))
     else:
         # IF Player 2, Bar reduces to the Left
+        name_rect = name_img.get_rect(midright=(x + 400 - 5, y + 15))
         pygame.draw.rect(screen, GREEN, (x, y, 400 * ratio, 30))
+    screen.blit(name_img, name_rect)
     
 #===========================#
 #==#  Fighter Variables  #==#
@@ -109,8 +113,8 @@ while run:
     clock.tick(FPS)
     # Draw elements
     draw_bg()
-    draw_health_bar(fighter_1.health, 20, 20, flip=True)
-    draw_health_bar(fighter_2.health, 580, 20)
+    draw_health_bar(FIGHTER1_NAME,fighter_1.health, 20, 20, flip=True)
+    draw_health_bar(FIGHTER2_NAME,fighter_2.health, 580, 20)
     draw_skulls(1,score[0], 388, 60)   # Skulls for player 1
     draw_skulls(2,score[1], 580, 60)  # Skulls for player 2
 

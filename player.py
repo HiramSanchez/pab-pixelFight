@@ -80,13 +80,7 @@ class Player():
                     self.vel_y = JUMP_HEIGHT
                     self.jump = True
                 # attack
-                if key[pygame.K_r] or key[pygame.K_t]:
-                    self.attack(surface, target)
-                    #determine used attack
-                    if key [pygame.K_r]:
-                        self.attack_type = 1
-                    if key [pygame.K_t]:
-                        self.attack_type = 2
+                self.handle_attacks(key, surface, target)
             
             # player 2  
             if self.player == 2:
@@ -101,13 +95,7 @@ class Player():
                     self.vel_y = JUMP_HEIGHT
                     self.jump = True
                 # attack
-                if key[pygame.K_k] or key[pygame.K_l]:
-                    self.attack(surface, target)
-                    #determine used attack
-                    if key [pygame.K_k]:
-                        self.attack_type = 1
-                    if key [pygame.K_l]:
-                        self.attack_type = 2
+                self.handle_attacks(key, surface, target)
                 
         # apply gravity
         self.vel_y += GRAVITY
@@ -137,6 +125,24 @@ class Player():
         self.rect.x += dx
         self.rect.y += dy
         
+    #========================# 
+    #==#  Handle Attacks  #==#
+    #========================#
+    def handle_attacks(self, key, surface, target):
+        if self.player == 1: # P1 Attack controls
+            if key[pygame.K_r] or key[pygame.K_t]:
+                if key[pygame.K_r]:
+                    self.attack_type = 1
+                elif key[pygame.K_t]:
+                    self.attack_type = 2
+                self.attack(surface, target)    
+        elif self.player == 2: # P2 Attack controls 
+            if key[pygame.K_k] or key[pygame.K_l]:
+                if key[pygame.K_k]:
+                    self.attack_type = 1
+                elif key[pygame.K_l]:
+                    self.attack_type = 2
+                self.attack(surface, target)
         
     #===================# 
     #==#  Animation  #==#
@@ -190,11 +196,31 @@ class Player():
     def attack(self, surface, target):
         if self.attack_cooldown == 0:
             self.attacking = True
-            attacking_rect = pygame.Rect(self.rect.centerx - (2 * self.rect.width * self.flip), self.rect.y, 2 * self.rect.width, self.rect.height)
+                # Config range and attack according to attack type
+            if self.attack_type == 1:
+                # Attack Type 1: Low Range More Damage
+                attack_width = self.rect.width * 1.5  
+                damage = 10 
+            elif self.attack_type == 2:
+                # Attack Type 2: More Range Low Damage
+                attack_width = self.rect.width * 2
+                damage = 5
+
+            # Creates attack area
+            attacking_rect = pygame.Rect(
+                self.rect.centerx - (attack_width * self.flip),
+                self.rect.y,
+                attack_width,
+                self.rect.height
+            )
+
+            # Check if collision happened
             if attacking_rect.colliderect(target.rect):
-                target.health -= 10
+                target.health -= damage
                 target.hit = True
-            pygame.draw.rect(surface, (0,255,0), attacking_rect)
+
+            # Draw hit area on green for debug
+            pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
             
             
     #================#
