@@ -22,6 +22,7 @@ GREEN = (0,255,0)
 RED = (255,0,0)
 YELLOW = (255,255,0)
 WHITE = (255,255,255)
+BLUE = (0, 0, 255)
 # Game Variables
 intro_count = 3
 show_fight_time = 1000  # Time that "FIGHT!" shows in miliseconds
@@ -62,21 +63,33 @@ def draw_skulls(player,player_score, x, y):
 def draw_bg():
     scale_bg = pygame.transform.scale(bg_image,(SCREEN_WIDTH,SCREEN_HEIGHT))
     screen.blit(scale_bg,(0,0))
-# Draw health bars
-def draw_health_bar(fighter_name, health, x, y, flip=False):
-    ratio = health / 100
-    pygame.draw.rect(screen, WHITE, (x - 2, y - 2, 404, 34))
-    pygame.draw.rect(screen, RED, (x, y, 400, 30))
-    name_img = score_font.render(fighter_name, True, WHITE)
-    if flip:
-        # IF Player 1, Bar reduces to the Right
-        name_rect = name_img.get_rect(midleft=(x + 5, y + 15))
-        pygame.draw.rect(screen, GREEN, (x + (400 * (1 - ratio)), y, 400 * ratio, 30))
-    else:
-        # IF Player 2, Bar reduces to the Left
-        name_rect = name_img.get_rect(midright=(x + 400 - 5, y + 15))
-        pygame.draw.rect(screen, GREEN, (x, y, 400 * ratio, 30))
-    screen.blit(name_img, name_rect)
+
+# Draw UI Bars - health (type 1) & Energy (type 2)
+def draw_UI_bar(type, fighter_name, health, energy, x, y, flip=False):
+    if type == 1:
+        ratio = health / 100
+        pygame.draw.rect(screen, WHITE, (x - 2, y - 2, 404, 34))
+        pygame.draw.rect(screen, RED, (x, y, 400, 30))
+        name_img = score_font.render(fighter_name, True, WHITE)
+        if flip:
+            # IF Player 1, Bar reduces to the Right
+            name_rect = name_img.get_rect(midleft=(x + 5, y + 15))
+            pygame.draw.rect(screen, GREEN, (x + (400 * (1 - ratio)), y, 400 * ratio, 30))
+        else:
+            # IF Player 2, Bar reduces to the Left
+            name_rect = name_img.get_rect(midright=(x + 400 - 5, y + 15))
+            pygame.draw.rect(screen, GREEN, (x, y, 400 * ratio, 30))
+        screen.blit(name_img, name_rect)
+    elif type == 2:
+        ratio = energy / 100
+        pygame.draw.rect(screen, WHITE, (x - 2, y - 2, 204, 24))
+        if flip:
+            # IF Player 2, Bar grows to the left
+            pygame.draw.rect(screen, BLUE, (x + (200 * (1 - ratio)), y, 200 * ratio, 20))
+        else:
+            # IF Player 1, Bar grows to the right
+            pygame.draw.rect(screen, BLUE, (x, y, 200 * ratio, 20))
+            
     
 #===========================#
 #==#  Fighter Variables  #==#
@@ -93,12 +106,12 @@ FIGHTER2_SIZE = 128
 FIGHTER2_SCALE = 2
 FIGHTER2_OFFSET =[44,38]
 FIGHTER2_DATA = [FIGHTER2_SIZE, FIGHTER2_SCALE, FIGHTER2_OFFSET]
-# Load sprites
-player_1_sheet = pygame.image.load("assets\\images\\fighters\\"+FIGHTER1_NAME+"\\spritesheet.png").convert_alpha()
-player_2_sheet = pygame.image.load("assets\\images\\fighters\\"+FIGHTER2_NAME+"\\spritesheet.png").convert_alpha()
 # Animation Steps
 PLAYER1_ANIMATION_STEPS = [6,8,8,12,6,4,3,2,2,4]
 PLAYER2_ANIMATION_STEPS = [5,6,7,8,4,4,4,4,3,6]
+# Load sprites
+player_1_sheet = pygame.image.load("assets\\images\\fighters\\"+FIGHTER1_NAME+"\\spritesheet.png").convert_alpha()
+player_2_sheet = pygame.image.load("assets\\images\\fighters\\"+FIGHTER2_NAME+"\\spritesheet.png").convert_alpha()
 # Create two instances of Players
 fighter_1 = Player(1, 200, 310, False, FIGHTER1_DATA, player_1_sheet, PLAYER1_ANIMATION_STEPS)
 fighter_2 = Player(2, 700, 310, True, FIGHTER2_DATA, player_2_sheet, PLAYER2_ANIMATION_STEPS)
@@ -113,8 +126,10 @@ while run:
     clock.tick(FPS)
     # Draw elements
     draw_bg()
-    draw_health_bar(FIGHTER1_NAME,fighter_1.health, 20, 20, flip=True)
-    draw_health_bar(FIGHTER2_NAME,fighter_2.health, 580, 20)
+    draw_UI_bar(1,FIGHTER1_NAME,fighter_1.health, fighter_1.energy, 20, 20, flip=True)
+    draw_UI_bar(1,FIGHTER2_NAME,fighter_2.health, fighter_2.energy, 580, 20)
+    draw_UI_bar(2,FIGHTER1_NAME,fighter_1.health, fighter_1.energy, 20, 55)
+    draw_UI_bar(2,FIGHTER2_NAME,fighter_2.health, fighter_2.energy, 780, 55, flip=True)
     draw_skulls(1,score[0], 388, 60)   # Skulls for player 1
     draw_skulls(2,score[1], 580, 60)  # Skulls for player 2
 
