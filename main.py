@@ -18,7 +18,7 @@ pygame.display.set_caption("Pixel Fight")
 clock = pygame.time.Clock()
 FPS = 60
 # Timer variables
-ROUND_TIME_LIMIT = 14 * 1000  # 90 seconds in milliseconds + 4 of intro
+ROUND_TIME_LIMIT = 154 * 1000  # 90 seconds in milliseconds + 4 of intro
 round_start_time = pygame.time.get_ticks()
 time_left = ROUND_TIME_LIMIT / 1000  # Initialize with total seconds
 # Colors
@@ -48,23 +48,38 @@ skull_icon = pygame.image.load("assets\\images\\icons\\skull.png").convert_alpha
 #===========================#
 #==#  Fighter Variables  #==#
 #===========================#
-# Scale  Player 1
-FIGHTER1_NAME = "Bam"
-FIGHTER1_SIZE = 266.7
-FIGHTER1_SCALE = 0.9
-FIGHTER1_OFFSET = [94,65]
-FIGHTER1_FREEZE_OFFSET = [-85,-60]
+# Player 1
+FIGHTER1_NAME = "Raruto"
+FIGHTER1_SIZE = 128
+FIGHTER1_SCALE = 1.6
+FIGHTER1_OFFSET = [34,15]
+FIGHTER1_FREEZE_OFFSET = [-55,-23]
 FIGHTER1_DATA = [FIGHTER1_SIZE, FIGHTER1_SCALE, FIGHTER1_OFFSET, FIGHTER1_NAME]
-# Scale  Player 2
-FIGHTER2_NAME = "Onichan"
+# Player 2
+FIGHTER2_NAME = "Starlight"
 FIGHTER2_SIZE = 128
-FIGHTER2_SCALE = 2
-FIGHTER2_OFFSET =[44,38]
-FIGHTER2_FREEZE_OFFSET = [-88,-75]
+FIGHTER2_SCALE = 2.1
+FIGHTER2_OFFSET =[45,41]
+FIGHTER2_FREEZE_OFFSET = [-98,-87]
 FIGHTER2_DATA = [FIGHTER2_SIZE, FIGHTER2_SCALE, FIGHTER2_OFFSET, FIGHTER2_NAME]
+#Existen estos otros 2 fighters
+#NAME = "Onichan"
+#ANIMATION_STEPS = [5, 6, 7, 8, 4, 4, 4, 4, 3, 6]
+#SIZE = 128
+#SCALE = 2
+#OFFSET =[44,38]
+#FREEZE_OFFSET = [-88,-75]
+
+#NAME = "Bam"
+#ANIMATION_STEPS = [6, 8, 8, 12, 6, 4, 3, 2, 2, 4]
+#SIZE = 266.7
+#SCALE = 0.9
+#OFFSET = [94,65]
+#FREEZE_OFFSET = [-85,-60]
+
 # Animation Steps
-PLAYER1_ANIMATION_STEPS = [6,8,8,12,6,4,3,2,2,4]
-PLAYER2_ANIMATION_STEPS = [5,6,7,8,4,4,4,4,3,6]
+PLAYER1_ANIMATION_STEPS = [6, 8, 8, 10, 3, 4, 4, 2, 3, 4]
+PLAYER2_ANIMATION_STEPS = [7, 7, 8, 8, 4, 10, 10, 7, 3, 6]
 # Load sprites
 player_1_sheet = pygame.image.load("assets\\images\\fighters\\"+FIGHTER1_NAME+"\\spritesheet.png").convert_alpha()
 player_2_sheet = pygame.image.load("assets\\images\\fighters\\"+FIGHTER2_NAME+"\\spritesheet.png").convert_alpha()
@@ -79,8 +94,8 @@ fighter_2 = Player(2, 700, 310, True, FIGHTER2_DATA, player_2_sheet, PLAYER2_ANI
 WINS_TEXT ="wins"
 VICTORY_TEXT ="victory!"
 FIGHT_TEXT ="FIGHT!"
-count_font = pygame.font.Font("assets\\fonts\\HelvetiPixel.ttf", 80)
-score_font = pygame.font.Font("assets\\fonts\\HelvetiPixel.ttf", 40)
+count_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 80)
+score_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 40)
 # Draw centered text
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
@@ -107,9 +122,9 @@ def draw_timer(time_left):
         draw_text(time_text, count_font, WHITE, SCREEN_WIDTH / 2, 35)
 
 # Draw UI Bars - health (type 1) & Energy (type 2)
-def draw_UI_bar(type, fighter_name, health, energy, x, y, flip=False):
+def draw_UI_bar(type, fighter_name, data, x, y, flip=False):
     if type == 1:
-        ratio = health / 100
+        ratio = data / 100
         pygame.draw.rect(screen, WHITE, (x - 2, y - 2, 404, 34))
         pygame.draw.rect(screen, RED, (x, y, 400, 30))
         name_img = score_font.render(fighter_name, True, WHITE)
@@ -123,7 +138,7 @@ def draw_UI_bar(type, fighter_name, health, energy, x, y, flip=False):
             pygame.draw.rect(screen, GREEN, (x, y, 400 * ratio, 30))
         screen.blit(name_img, name_rect)
     elif type == 2:
-        ratio = energy / 100
+        ratio = data / 100
         pygame.draw.rect(screen, WHITE, (x - 2, y - 2, 204, 24))
         pygame.draw.rect(screen, BLUE, (x, y, 200, 20))
         if flip:
@@ -169,10 +184,10 @@ while run:
     # Draw elements
     draw_bg()
     draw_timer(time_left)
-    draw_UI_bar(1,FIGHTER1_NAME,fighter_1.health, fighter_1.energy, 20, 20, flip=True)
-    draw_UI_bar(1,FIGHTER2_NAME,fighter_2.health, fighter_2.energy, 580, 20)
-    draw_UI_bar(2,FIGHTER1_NAME,fighter_1.health, fighter_1.energy, 20, 55)
-    draw_UI_bar(2,FIGHTER2_NAME,fighter_2.health, fighter_2.energy, 780, 55, flip=True)
+    draw_UI_bar(1,FIGHTER1_NAME, fighter_1.health, 20, 20, flip=True)
+    draw_UI_bar(1,FIGHTER2_NAME, fighter_2.health, 580, 20)
+    draw_UI_bar(2,FIGHTER1_NAME, fighter_1.energy, 20, 55)
+    draw_UI_bar(2,FIGHTER2_NAME, fighter_2.energy, 780, 55, flip=True)
     draw_skulls(1,score[0], 388, 60)   # Skulls for player 1
     draw_skulls(2,score[1], 580, 60)  # Skulls for player 2
     draw_max_energy_text(1, fighter_1.energy, 20, 55)
@@ -210,7 +225,6 @@ while run:
         # When "FIGHT!" time has finished, allow movement
         fighter_1.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_2, round_over)
         fighter_2.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_1, round_over)
-
         
     # Update & Draw fighters
     fighter_1.update()
