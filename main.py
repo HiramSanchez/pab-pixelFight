@@ -1,4 +1,5 @@
 import pygame
+import time
 from player import Player
 
 #============================#
@@ -18,7 +19,7 @@ pygame.display.set_caption("Pixel Fight")
 clock = pygame.time.Clock()
 FPS = 60
 # Timer variables
-ROUND_TIME_LIMIT = 154 * 1000  # 90 seconds in milliseconds + 4 of intro
+ROUND_TIME_LIMIT = 94 * 1000  # 90 seconds in milliseconds + 4 of intro
 round_start_time = pygame.time.get_ticks()
 time_left = ROUND_TIME_LIMIT / 1000  # Initialize with total seconds
 # Colors
@@ -26,6 +27,7 @@ GREEN = (23,193,36)
 RED = (163,41,41)
 YELLOW = (255,255,0)
 WHITE = (255,255,255)
+GRAY = (170,170,170)
 BLUE = (4, 28, 49)
 CYAN = (15,158,234)
 # Game Variables
@@ -37,12 +39,13 @@ last_count_update = pygame.time.get_ticks()
 score = [0, 0] # player score [player1, player2]
 round_over = False
 ROUND_OVER_COOLDOWN =2000
-# Text Variables
+# Blinking Text Variables
 max_text_visible = True
 max_last_blink_time = pygame.time.get_ticks()
 MAX_BLINK_INTERVAL = 500
 # Load Assets
-bg_image = pygame.image.load("assets\\images\\backgrounds\\battleground.png").convert_alpha()
+bg_image_battle = pygame.image.load("assets\\images\\backgrounds\\battleground.png").convert_alpha()
+bg_image_selection = pygame.image.load("assets\\images\\backgrounds\\selection.png").convert_alpha()
 skull_icon = pygame.image.load("assets\\images\\icons\\skull.png").convert_alpha()
 
 #======================#
@@ -53,36 +56,57 @@ fighters = [
     {"name": "Raruto", "size": 128, "scale": 1.6, "offset": [34, 15], "freeze_offset": [-55,-23], "animation_steps":[6, 8, 8, 10, 3, 4, 4, 2, 3, 4]},
     {"name": "Starlight", "size": 128, "scale": 2.1, "offset": [45, 41], "freeze_offset": [-95,-87], "animation_steps":[7, 7, 8, 8, 4, 10, 10, 7, 3, 6]},
     {"name": "Onichan", "size": 128, "scale": 2, "offset": [44, 38], "freeze_offset": [-88,-75], "animation_steps":[5, 6, 7, 8, 4, 4, 4, 4, 3, 6]},
-    {"name": "Bam", "size": 266, "scale": 0.9, "offset": [94, 65], "freeze_offset": [-85,-60], "animation_steps":[6, 8, 8, 12, 6, 4, 3, 2, 2, 4]}
+    {"name": "Bam", "size": 128, "scale": 1.8, "offset": [40, 27], "freeze_offset": [-73,-50], "animation_steps":[6, 8, 8, 12, 6, 4, 3, 2, 2, 4]}
 ]
 
 # Show Fighter List
-def draw_character_selection(selected, x, y):
+def draw_character_selection(selected1,selected2):
+
+    # Dibujar nombres centrados
     for i, fighter in enumerate(fighters):
-        color = GREEN if i == selected else WHITE
-        name_text = score_font.render(fighter["name"], True, color)
-        screen.blit(name_text, (x, y + i * 50))
+        text = score_font.render(fighter["name"], True, WHITE)
+        text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100 + i * 60))
+        screen.blit(text, text_rect)
+
+        # Dibujar selectores
+        if i == selected1 and i == selected2:
+            # Parpadeo alternando colores
+            selected_color = GREEN if time.time() % 0.5 < 0.25 else CYAN
+            pygame.draw.rect(screen, selected_color, text_rect.inflate(10, 10), 3)
+        elif i == selected1:
+            pygame.draw.rect(screen, GREEN, text_rect.inflate(10, 10), 3)
+        elif i == selected2:
+            pygame.draw.rect(screen, CYAN, text_rect.inflate(10, 10), 3)      
+
 
 # Selector main loop
 def character_selection_screen():
+    global max_text_visible, max_last_blink_time,round_start_time
     selected_fighter_1 = 0  # P1 Selected index
-    selected_fighter_2 = 0  # P2 Selected index
+    selected_fighter_2 = 3  # P2 Selected index
 
     while True:
-        screen.fill(CYAN)  # bg
-
-        # Show fighter list for both
-        draw_text("Player 1: Select your fighter", score_font, BLUE, SCREEN_WIDTH / 4, 50)
-        draw_character_selection(selected_fighter_1, SCREEN_WIDTH / 4, 100)
-
-        draw_text("Player 2: Select your fighter", score_font, BLUE, 3 * SCREEN_WIDTH / 4, 50)
-        draw_character_selection(selected_fighter_2, 3 * SCREEN_WIDTH / 4, 100)
-        
-        draw_selected_image(screen, str(fighters[selected_fighter_1]['name']), 50, 100)  # Img P1
-        draw_selected_image(screen, str(fighters[selected_fighter_2]['name']), 550, 100)  # Img P2   
-
-        pygame.display.update()
-
+        draw_bg(1)# bg
+        current_time = pygame.time.get_ticks()
+        # draw "Choose a fighter"
+        draw_text("Choose a fighter", score_font, WHITE, SCREEN_WIDTH / 2, 80)
+        # draw player number
+        draw_text("Player 1:", score_font, GREEN, SCREEN_WIDTH / 4, 180)
+        draw_text("Player 2:", score_font, CYAN, 3* SCREEN_WIDTH / 4, 180)
+        # draw selection
+        draw_character_selection(selected_fighter_1, selected_fighter_2)
+        draw_selected_image(screen, str(fighters[selected_fighter_1]['name']), SCREEN_WIDTH / 2 - 314, 236)  # Img P1
+        draw_selected_image(screen, str(fighters[selected_fighter_2]['name']), SCREEN_WIDTH / 2 + 186, 236)  # Img P2   
+        # blink behaviour
+        if current_time - max_last_blink_time >= MAX_BLINK_INTERVAL:
+            max_text_visible = not max_text_visible
+            max_last_blink_time = current_time
+        # Draw text if visible
+        draw_text("Press 'Enter' to continue", score_font, GRAY, SCREEN_WIDTH / 2, 520)
+        if max_text_visible:
+            draw_text("Press 'Enter' to continue", score_font, WHITE, SCREEN_WIDTH / 2, 520)
+            
+            
         # Event handler
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -98,7 +122,9 @@ def character_selection_screen():
                 elif event.key == pygame.K_DOWN:
                     selected_fighter_2 = (selected_fighter_2 + 1) % len(fighters)
                 elif event.key == pygame.K_RETURN:  # Start with enter
+                    round_start_time = pygame.time.get_ticks()
                     return fighters[selected_fighter_1], fighters[selected_fighter_2]     
+        pygame.display.update()
                 
 # Image Selector func              
 def load_character_image(character_name):
@@ -121,6 +147,7 @@ def draw_selected_image(screen, character_name, x, y):
 WINS_TEXT ="wins"
 VICTORY_TEXT ="victory!"
 FIGHT_TEXT ="FIGHT!"
+timer_font = pygame.font.Font("assets\\fonts\\HelvetiPixel.ttf", 80)
 count_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 80)
 score_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 40)
 # Draw centered text
@@ -138,15 +165,19 @@ def draw_skulls(player,player_score, x, y):
             flipped_skull = pygame.transform.flip(skull_icon, True, False)
             screen.blit(flipped_skull, (x + i * (flipped_skull.get_width() + 5), y))
 # Draw & Scale Background
-def draw_bg():
-    scale_bg = pygame.transform.scale(bg_image,(SCREEN_WIDTH,SCREEN_HEIGHT))
-    screen.blit(scale_bg,(0,0))
+def draw_bg(bg_type):
+    if bg_type == 2:
+        scale_bg = pygame.transform.scale(bg_image_battle,(SCREEN_WIDTH,SCREEN_HEIGHT))
+        screen.blit(scale_bg,(0,0))
+    elif bg_type == 1:
+        scale_bg = pygame.transform.scale(bg_image_selection,(SCREEN_WIDTH,SCREEN_HEIGHT))
+        screen.blit(scale_bg,(0,0))       
 
 # Draw Timer 
 def draw_timer(time_left):
     time_text = f"{int(time_left):02}"
     if time_left <= ((ROUND_TIME_LIMIT/1000)-3):
-        draw_text(time_text, count_font, WHITE, SCREEN_WIDTH / 2, 35)
+        draw_text(time_text, timer_font, YELLOW, SCREEN_WIDTH / 2, 35)
 
 # Draw UI Bars - health (type 1) & Energy (type 2)
 def draw_UI_bar(type, fighter_name, data, x, y, flip=False):
@@ -179,20 +210,20 @@ def draw_UI_bar(type, fighter_name, data, x, y, flip=False):
 def draw_max_energy_text(player, energy, x, y):
     global max_text_visible, max_last_blink_time
 
-    # Verifica si la energía está al máximo
+    # VerifY IF energy at MAX
     if energy >= 100:
         current_time = pygame.time.get_ticks()
-        # Alterna la visibilidad cada intervalo de tiempo
+        # blink behaviour
         if current_time - max_last_blink_time >= MAX_BLINK_INTERVAL:
             max_text_visible = not max_text_visible
             max_last_blink_time = current_time
-        # Dibuja "MAX" si es visible en este momento
+        # Draw "MAX" if visible
         if max_text_visible:
             if player == 1:
-                # Mostrar a la derecha de la barra de energía
+                # Right energy bar
                 draw_text("MAX", score_font, CYAN, x + 240, y + 10)
             elif player == 2:
-                # Mostrar a la izquierda de la barra de energía
+                # Left energy bar
                 draw_text("MAX", score_font, CYAN, x - 40, y + 10)
   
 #============================#
@@ -215,13 +246,12 @@ while run:
     
     # Add framerate
     clock.tick(FPS)
-    
     # Draw & Update timer
     elapsed_time = pygame.time.get_ticks() - round_start_time
     time_left = max(0, (ROUND_TIME_LIMIT - elapsed_time) / 1000)
     
     # Draw elements
-    draw_bg()
+    draw_bg(2)
     draw_timer(time_left)
     draw_UI_bar(1,fighter_1_data['name'], fighter_1.health, 20, 20, flip=True)
     draw_UI_bar(1,fighter_2_data['name'], fighter_2.health, 580, 20)
@@ -242,24 +272,24 @@ while run:
             winner_name = fighter_2_data['name']
             score[0] += 1  # Player 2 wins
         else:
-            winner_name = "Draw" # Draw
+            winner_name = "No One" # Draw
         round_over = True
         round_over_time = pygame.time.get_ticks()
 
     # Count & "FIGHT!" screen logic
     if intro_count > 0:
-        draw_text(str(intro_count), count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3)
+        draw_text(str(intro_count), timer_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3)
         if pygame.time.get_ticks() - last_count_update >= 1000:
             intro_count -= 1
             last_count_update = pygame.time.get_ticks()
     elif not fight_displayed:
         # Show "FIGHT!" at start each round
-        draw_text(FIGHT_TEXT, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 180)
+        draw_text(FIGHT_TEXT, timer_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 180)
         fight_display_start = pygame.time.get_ticks()
         fight_displayed = True
     elif pygame.time.get_ticks() - fight_display_start < show_fight_time:
         # Keep showing "FIGHT!" while time asigned
-        draw_text(FIGHT_TEXT, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 180)
+        draw_text(FIGHT_TEXT, timer_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 180)
     else:
         # When "FIGHT!" time has finished, allow movement
         fighter_1.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_2, round_over)
