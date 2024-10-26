@@ -45,48 +45,75 @@ MAX_BLINK_INTERVAL = 500
 bg_image = pygame.image.load("assets\\images\\backgrounds\\battleground.png").convert_alpha()
 skull_icon = pygame.image.load("assets\\images\\icons\\skull.png").convert_alpha()
 
-#===========================#
-#==#  Fighter Variables  #==#
-#===========================#
-# Player 1
-FIGHTER1_NAME = "Raruto"
-FIGHTER1_SIZE = 128
-FIGHTER1_SCALE = 1.6
-FIGHTER1_OFFSET = [34,15]
-FIGHTER1_FREEZE_OFFSET = [-55,-23]
-FIGHTER1_DATA = [FIGHTER1_SIZE, FIGHTER1_SCALE, FIGHTER1_OFFSET, FIGHTER1_NAME]
-# Player 2
-FIGHTER2_NAME = "Starlight"
-FIGHTER2_SIZE = 128
-FIGHTER2_SCALE = 2.1
-FIGHTER2_OFFSET =[45,41]
-FIGHTER2_FREEZE_OFFSET = [-98,-87]
-FIGHTER2_DATA = [FIGHTER2_SIZE, FIGHTER2_SCALE, FIGHTER2_OFFSET, FIGHTER2_NAME]
-#Existen estos otros 2 fighters
-#NAME = "Onichan"
-#ANIMATION_STEPS = [5, 6, 7, 8, 4, 4, 4, 4, 3, 6]
-#SIZE = 128
-#SCALE = 2
-#OFFSET =[44,38]
-#FREEZE_OFFSET = [-88,-75]
+#======================#
+#==#  Fighter List  #==#
+#======================#
 
-#NAME = "Bam"
-#ANIMATION_STEPS = [6, 8, 8, 12, 6, 4, 3, 2, 2, 4]
-#SIZE = 266.7
-#SCALE = 0.9
-#OFFSET = [94,65]
-#FREEZE_OFFSET = [-85,-60]
+fighters = [
+    {"name": "Raruto", "size": 128, "scale": 1.6, "offset": [34, 15], "freeze_offset": [-55,-23], "animation_steps":[6, 8, 8, 10, 3, 4, 4, 2, 3, 4]},
+    {"name": "Starlight", "size": 128, "scale": 2.1, "offset": [45, 41], "freeze_offset": [-95,-87], "animation_steps":[7, 7, 8, 8, 4, 10, 10, 7, 3, 6]},
+    {"name": "Onichan", "size": 128, "scale": 2, "offset": [44, 38], "freeze_offset": [-88,-75], "animation_steps":[5, 6, 7, 8, 4, 4, 4, 4, 3, 6]},
+    {"name": "Bam", "size": 266, "scale": 0.9, "offset": [94, 65], "freeze_offset": [-85,-60], "animation_steps":[6, 8, 8, 12, 6, 4, 3, 2, 2, 4]}
+]
 
-# Animation Steps
-PLAYER1_ANIMATION_STEPS = [6, 8, 8, 10, 3, 4, 4, 2, 3, 4]
-PLAYER2_ANIMATION_STEPS = [7, 7, 8, 8, 4, 10, 10, 7, 3, 6]
-# Load sprites
-player_1_sheet = pygame.image.load("assets\\images\\fighters\\"+FIGHTER1_NAME+"\\spritesheet.png").convert_alpha()
-player_2_sheet = pygame.image.load("assets\\images\\fighters\\"+FIGHTER2_NAME+"\\spritesheet.png").convert_alpha()
-# Create two instances of Players
-fighter_1 = Player(1, 200, 310, False, FIGHTER1_DATA, player_1_sheet, PLAYER1_ANIMATION_STEPS)
-fighter_2 = Player(2, 700, 310, True, FIGHTER2_DATA, player_2_sheet, PLAYER2_ANIMATION_STEPS)
+# Show Fighter List
+def draw_character_selection(selected, x, y):
+    for i, fighter in enumerate(fighters):
+        color = GREEN if i == selected else WHITE
+        name_text = score_font.render(fighter["name"], True, color)
+        screen.blit(name_text, (x, y + i * 50))
 
+# Selector main loop
+def character_selection_screen():
+    selected_fighter_1 = 0  # P1 Selected index
+    selected_fighter_2 = 0  # P2 Selected index
+
+    while True:
+        screen.fill(CYAN)  # bg
+
+        # Show fighter list for both
+        draw_text("Player 1: Select your fighter", score_font, BLUE, SCREEN_WIDTH / 4, 50)
+        draw_character_selection(selected_fighter_1, SCREEN_WIDTH / 4, 100)
+
+        draw_text("Player 2: Select your fighter", score_font, BLUE, 3 * SCREEN_WIDTH / 4, 50)
+        draw_character_selection(selected_fighter_2, 3 * SCREEN_WIDTH / 4, 100)
+        
+        draw_selected_image(screen, str(fighters[selected_fighter_1]['name']), 50, 100)  # Img P1
+        draw_selected_image(screen, str(fighters[selected_fighter_2]['name']), 550, 100)  # Img P2   
+
+        pygame.display.update()
+
+        # Event handler
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_w:
+                    selected_fighter_1 = (selected_fighter_1 - 1) % len(fighters)
+                elif event.key == pygame.K_s:
+                    selected_fighter_1 = (selected_fighter_1 + 1) % len(fighters)
+                elif event.key == pygame.K_UP:
+                    selected_fighter_2 = (selected_fighter_2 - 1) % len(fighters)
+                elif event.key == pygame.K_DOWN:
+                    selected_fighter_2 = (selected_fighter_2 + 1) % len(fighters)
+                elif event.key == pygame.K_RETURN:  # Start with enter
+                    return fighters[selected_fighter_1], fighters[selected_fighter_2]     
+                
+# Image Selector func              
+def load_character_image(character_name):
+    try:
+        path = "assets\\images\\fighters\\"+ character_name +"\\pick.png"
+        return pygame.image.load(path).convert_alpha()
+    except FileNotFoundError:
+        print(f"Img not found for {character_name}")
+        return None
+# Draw Image - Selector
+def draw_selected_image(screen, character_name, x, y):
+    image = load_character_image(character_name)
+    if image:
+        screen.blit(image, (x, y))
+    
 #========================#
 #==#  Draw on Screen  #==#
 #========================#
@@ -167,7 +194,19 @@ def draw_max_energy_text(player, energy, x, y):
             elif player == 2:
                 # Mostrar a la izquierda de la barra de energía
                 draw_text("MAX", score_font, CYAN, x - 40, y + 10)
-            
+  
+#============================#
+#==#  Fighters Variables  #==#
+#============================#
+ 
+fighter_1_data, fighter_2_data = character_selection_screen()     
+# Load sprites
+player_1_sheet = pygame.image.load("assets\\images\\fighters\\"+str(fighter_1_data['name'])+"\\spritesheet.png").convert_alpha()
+player_2_sheet = pygame.image.load("assets\\images\\fighters\\"+fighter_2_data['name']+"\\spritesheet.png").convert_alpha()
+# Create two instances of Players
+fighter_1 = Player(1, 200, 310, False, fighter_1_data, player_1_sheet, fighter_1_data['animation_steps'])
+fighter_2 = Player(2, 700, 310, True, fighter_2_data, player_2_sheet, fighter_2_data['animation_steps'])    
+
 #=====================#
 #==#  Battle Loop  #==#
 #=====================#
@@ -184,10 +223,10 @@ while run:
     # Draw elements
     draw_bg()
     draw_timer(time_left)
-    draw_UI_bar(1,FIGHTER1_NAME, fighter_1.health, 20, 20, flip=True)
-    draw_UI_bar(1,FIGHTER2_NAME, fighter_2.health, 580, 20)
-    draw_UI_bar(2,FIGHTER1_NAME, fighter_1.energy, 20, 55)
-    draw_UI_bar(2,FIGHTER2_NAME, fighter_2.energy, 780, 55, flip=True)
+    draw_UI_bar(1,fighter_1_data['name'], fighter_1.health, 20, 20, flip=True)
+    draw_UI_bar(1,fighter_2_data['name'], fighter_2.health, 580, 20)
+    draw_UI_bar(2,fighter_1_data['name'], fighter_1.energy, 20, 55)
+    draw_UI_bar(2,fighter_2_data['name'], fighter_2.energy, 780, 55, flip=True)
     draw_skulls(1,score[0], 388, 60)   # Skulls for player 1
     draw_skulls(2,score[1], 580, 60)  # Skulls for player 2
     draw_max_energy_text(1, fighter_1.energy, 20, 55)
@@ -197,10 +236,10 @@ while run:
     if time_left == 0 and not round_over:
         # Check winner
         if fighter_1.health > fighter_2.health:
-            winner_name = FIGHTER1_NAME
+            winner_name = fighter_1_data['name']
             score[1] += 1  # Player 1 wins
         elif fighter_2.health > fighter_1.health:
-            winner_name = FIGHTER2_NAME
+            winner_name = fighter_2_data['name']
             score[0] += 1  # Player 2 wins
         else:
             winner_name = "Draw" # Draw
@@ -236,12 +275,12 @@ while run:
     if round_over == False:
         if fighter_1.alive == False:
             score[0] += 1 # Increase dead count
-            winner_name = FIGHTER2_NAME
+            winner_name = fighter_2_data['name']
             round_over = True
             round_over_time = pygame.time.get_ticks()
         elif fighter_2.alive == False:
             score[1] += 1 # Increase dead count
-            winner_name = FIGHTER1_NAME
+            winner_name = fighter_1_data['name']
             round_over = True
             round_over_time = pygame.time.get_ticks()
     else:
@@ -263,17 +302,17 @@ while run:
             round_over = False
             intro_count = 3
             fight_displayed = False
-            fighter_1 = Player(1, 200, 310, False, FIGHTER1_DATA, player_1_sheet, PLAYER1_ANIMATION_STEPS)
-            fighter_2 = Player(2, 700, 310, True, FIGHTER2_DATA, player_2_sheet, PLAYER2_ANIMATION_STEPS)
+            fighter_1 = Player(1, 200, 310, False, fighter_1_data, player_1_sheet, fighter_1_data['animation_steps'])
+            fighter_2 = Player(2, 700, 310, True, fighter_2_data, player_2_sheet, fighter_2_data['animation_steps'])
      
     # Manage frozen status        
     if fighter_1.frozen or fighter_2.frozen:
         if fighter_1.frozen:
             frozenChar = fighter_1
-            frozenOffset = FIGHTER1_FREEZE_OFFSET
+            frozenOffset = fighter_1_data['freeze_offset']
         elif fighter_2.frozen:
             frozenChar = fighter_2
-            frozenOffset = FIGHTER2_FREEZE_OFFSET
+            frozenOffset = fighter_2_data['freeze_offset']
         # Create Blue mask 
         enemy_mask = pygame.mask.from_surface(frozenChar.image)
         blue_effect = pygame.Surface(frozenChar.image.get_size(), pygame.SRCALPHA)
