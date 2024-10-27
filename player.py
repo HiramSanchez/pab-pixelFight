@@ -195,9 +195,11 @@ class Player():
     #===================#
     def update(self): #handle animation updates
         # Checks current action
-        if self.energy >= 100:
+        if self.energy >= 100: # Keeps energy at 100 max
             self.energy = 100
-        if self.health <= 0:
+        if self.health >= 100: # Keeps live at 100 max
+            self.health = 100
+        if self.health <= 0: # Keeps live at 0 min
             self.health = 0
             self.alive = False
             self.update_action(9) #9: death
@@ -211,7 +213,7 @@ class Player():
             elif self.attack_type == 2:
                 self.update_action(5) #5: attack 2
             elif self.attack_type == 3:
-                self.update_action(6) #6: attack 3
+                self.update_action(6) #6: Spec Attack
         elif self.jump == True:
             self.update_action(3) #3: jump
         elif self.running == True:
@@ -266,9 +268,13 @@ class Player():
             # Check if collision happened
             if attacking_rect.colliderect(target.rect):
                 if target.blocking == False:
-                    target.health -= 25  # Dash Damage
-                    target.hit = True
-
+                    if self.fighter_name == "Bam":
+                        target.health -= 30  # Dash Damage
+                        target.hit = True
+                    elif self.fighter_name == "Starlight":
+                        target.health -= 20  # Dash Damage
+                        self.health += 15 # Damage Heal
+                        target.hit = True
             # Draw hit area on green for debug
             pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
     
