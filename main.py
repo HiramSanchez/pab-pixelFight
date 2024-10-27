@@ -45,7 +45,17 @@ max_last_blink_time = pygame.time.get_ticks()
 MAX_BLINK_INTERVAL = 500
 # Load Assets
 bg_image_battle = pygame.image.load("assets\\images\\backgrounds\\battleground.png").convert_alpha()
+bg_image_start = pygame.image.load("assets\\images\\backgrounds\\start.png").convert_alpha()
 skull_icon = pygame.image.load("assets\\images\\icons\\skull.png").convert_alpha()
+# Constants
+WINS_TEXT ="wins"
+VICTORY_TEXT ="victory!"
+FIGHT_TEXT ="FIGHT!"
+timer_font = pygame.font.Font("assets\\fonts\\HelvetiPixel.ttf", 80)
+button_font = pygame.font.Font("assets\\fonts\\HelvetiPixel.ttf", 40)
+title_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 120)
+count_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 80)
+score_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 40)
 
 #======================#
 #==#  Fighter List  #==#
@@ -61,15 +71,15 @@ fighters = [
 # Show Fighter List
 def draw_character_selection(selected1,selected2):
 
-    # Dibujar nombres centrados
+    # Draw centered name
     for i, fighter in enumerate(fighters):
-        text = score_font.render(fighter["name"], True, WHITE)
+        text = button_font.render(fighter["name"], True, WHITE)
         text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100 + i * 60))
         screen.blit(text, text_rect)
 
-        # Dibujar selectores
+        # Draw Selectors
         if i == selected1 and i == selected2:
-            # Parpadeo alternando colores
+            # Blink alternating colors
             selected_color = GREEN if time.time() % 0.5 < 0.25 else CYAN
             pygame.draw.rect(screen, selected_color, text_rect.inflate(10, 10), 3)
         elif i == selected1:
@@ -77,8 +87,64 @@ def draw_character_selection(selected1,selected2):
         elif i == selected2:
             pygame.draw.rect(screen, CYAN, text_rect.inflate(10, 10), 3)      
 
-
-# Selector main loop
+#==========================#
+#==#  Main Game Screen  #==#
+#==========================#
+def initial_screen():
+    # Define buttons
+    button_width, button_height = 280, 40
+    button1_x, button1_y = ((SCREEN_WIDTH - button_width) // 2), ((6* SCREEN_HEIGHT - button_height) // 10)
+    button2_x, button2_y = button1_x, (7* SCREEN_HEIGHT - button_height) // 10
+    
+    button1_rect = pygame.Rect(button1_x, button1_y, button_width, button_height)
+    button2_rect = pygame.Rect(button2_x, button2_y, button_width, button_height)
+    # Define variables for scrolling bg
+    bg_image = pygame.image.load("assets\\images\\backgrounds\\scrolling.png").convert()
+    bg_width = bg_image.get_width()
+    x_pos = 0
+    scroll_speed = 0.2
+   
+    while True:
+        # draw scrolling bg
+        x_pos -= scroll_speed
+        if x_pos <= -bg_width: x_pos = 0
+        screen.blit(bg_image, (x_pos, 0))  # main img
+        screen.blit(bg_image, (x_pos + bg_width, 0))
+        draw_text("Pixel Fight", title_font, CYAN, SCREEN_WIDTH / 2, (3* SCREEN_HEIGHT - button_height) // 10)
+        
+        # Button 1 'Play'
+        mouse_pos = pygame.mouse.get_pos()
+        if button1_rect.collidepoint(mouse_pos): 
+            button_color = CYAN 
+        else: 
+            button_color = GRAY     
+        pygame.draw.rect(screen, button_color, button1_rect)  # button bg
+        draw_text("Play", button_font, BLUE, button1_x + (button_width//2), button1_y + (button_height//2))
+        
+        # Button 2 'Controls'
+        mouse_pos = pygame.mouse.get_pos()
+        if button2_rect.collidepoint(mouse_pos): 
+            button2_color = CYAN 
+        else: 
+            button2_color = GRAY
+        pygame.draw.rect(screen, button2_color, button2_rect)  # button bg
+        draw_text("Controls", button_font, BLUE, button2_x + (button_width//2), button2_y + (button_height//2))
+        
+        # Event handler
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if button1_rect.collidepoint(event.pos):
+                    return
+        
+        pygame.display.update()
+        clock.tick(FPS)
+        
+#=========================#
+#==#  Selector Screen  #==#
+#=========================#
 def character_selection_screen():
     global max_text_visible, max_last_blink_time, round_start_time, elapsed_time
     selected_fighter_1 = 0  # P1 Selected index
@@ -90,10 +156,9 @@ def character_selection_screen():
     bg_width = bg_image.get_width()
     x_pos = 0
     scroll_speed = 2
-    
     while True:
-        delta_time = clock.tick(60)
-
+        
+        delta_time = clock.tick(FPS)
         # draw scrolling bg
         x_pos -= scroll_speed
         if x_pos <= -bg_width: x_pos = 0
@@ -102,10 +167,10 @@ def character_selection_screen():
         
         current_time = pygame.time.get_ticks()
         # draw "Choose a fighter"
-        draw_text("Choose a fighter", score_font, WHITE, SCREEN_WIDTH / 2, 80)
+        draw_text("Choose a fighter", count_font, CYAN, SCREEN_WIDTH / 2, 80)
         # draw player number
-        draw_text("Player 1:", score_font, GREEN, SCREEN_WIDTH / 4, 180)
-        draw_text("Player 2:", score_font, CYAN, 3* SCREEN_WIDTH / 4, 180)
+        draw_text("Player 1:", button_font, GREEN, SCREEN_WIDTH / 4, 180)
+        draw_text("Player 2:", button_font, CYAN, 3* SCREEN_WIDTH / 4, 180)
         # draw selection
         draw_character_selection(selected_fighter_1, selected_fighter_2)
         draw_selected_image(screen, str(fighters[selected_fighter_1]['name']), SCREEN_WIDTH / 2 - 314, 236)  # Img P1
@@ -123,9 +188,9 @@ def character_selection_screen():
             max_text_visible = not max_text_visible
             max_last_blink_time = current_time
         # Draw text if visible
-        draw_text("Press 'Enter' to continue", score_font, GRAY, SCREEN_WIDTH / 2, 520)
+        draw_text("Press 'Enter' to continue", button_font, GRAY, SCREEN_WIDTH / 2, 520)
         if max_text_visible:
-            draw_text("Press 'Enter' to continue", score_font, WHITE, SCREEN_WIDTH / 2, 520)
+            draw_text("Press 'Enter' to continue", button_font, WHITE, SCREEN_WIDTH / 2, 520)
         
 
             
@@ -145,10 +210,34 @@ def character_selection_screen():
                     selected_fighter_2 = (selected_fighter_2 + 1) % len(fighters)
                 elif event.key == pygame.K_RETURN:  # Start with enter
                     round_start_time = pygame.time.get_ticks()
-                    return fighters[selected_fighter_1], fighters[selected_fighter_2]   
-        
+                    return fighters[selected_fighter_1], fighters[selected_fighter_2]     
         pygame.display.update()
-                
+        
+  
+#========================#
+#==#  Game Functions  #==#
+#========================#
+# Draw & Scale Background
+def draw_bg(bg_type):
+    if bg_type == 2:
+        scale_bg = pygame.transform.scale(bg_image_battle,(SCREEN_WIDTH,SCREEN_HEIGHT))
+        screen.blit(scale_bg,(0,0))    
+    if bg_type == 1:
+        scale_bg = pygame.transform.scale(bg_image_start,(SCREEN_WIDTH,SCREEN_HEIGHT))
+        screen.blit(scale_bg,(0,0))  
+
+# Draw centered text Func
+def draw_text(text, font, text_col, x, y):
+    img = font.render(text, True, text_col)
+    text_rect = img.get_rect(center=(x, y))
+    screen.blit(img, text_rect)
+
+# Draw Image - Selector Func
+def draw_selected_image(screen, character_name, x, y):
+    image = load_character_image(character_name)
+    if image:
+        screen.blit(image, (x, y))              
+
 # Image background for Char Selector            
 def load_character_image(character_name):
     try:
@@ -157,11 +246,6 @@ def load_character_image(character_name):
     except FileNotFoundError:
         print(f"Img not found for {character_name}")
         return None
-# Draw Image - Selector
-def draw_selected_image(screen, character_name, x, y):
-    image = load_character_image(character_name)
-    if image:
-        screen.blit(image, (x, y))
     
 # Load spritesheet
 def load_character_spritesheet(character_name):
@@ -197,22 +281,10 @@ def update_frame_index(current_index, elapsed_time, frame_duration):
     if elapsed_time >= frame_duration:
         return (current_index + 1), 0
     return current_index, elapsed_time
-
+        
 #========================#
 #==#  Draw on Screen  #==#
 #========================#
-# Constants
-WINS_TEXT ="wins"
-VICTORY_TEXT ="victory!"
-FIGHT_TEXT ="FIGHT!"
-timer_font = pygame.font.Font("assets\\fonts\\HelvetiPixel.ttf", 80)
-count_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 80)
-score_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 40)
-# Draw centered text
-def draw_text(text, font, text_col, x, y):
-    img = font.render(text, True, text_col)
-    text_rect = img.get_rect(center=(x, y))
-    screen.blit(img, text_rect)
 # Draw skulls according to deaths
 def draw_skulls(player,player_score, x, y):
     # 2 skulls max
@@ -222,12 +294,6 @@ def draw_skulls(player,player_score, x, y):
         elif player ==2:
             flipped_skull = pygame.transform.flip(skull_icon, True, False)
             screen.blit(flipped_skull, (x + i * (flipped_skull.get_width() + 5), y))
-# Draw & Scale Background
-def draw_bg(bg_type):
-    if bg_type == 2:
-        scale_bg = pygame.transform.scale(bg_image_battle,(SCREEN_WIDTH,SCREEN_HEIGHT))
-        screen.blit(scale_bg,(0,0))      
-
 # Draw Timer 
 def draw_timer(time_left):
     time_text = f"{int(time_left):02}"
@@ -280,19 +346,25 @@ def draw_max_energy_text(player, energy, x, y):
             elif player == 2:
                 # Left energy bar
                 draw_text("MAX", score_font, CYAN, x - 40, y + 10)
-  
+ 
+#============================#
+#==#  Main Game Loop Call #==#
+#============================#
+if __name__ == "__main__":
+    initial_screen()  
+     
 #============================#
 #==#  Fighters Variables  #==#
 #============================#
- 
-fighter_1_data, fighter_2_data = character_selection_screen()     
+fighter_1_data, fighter_2_data = character_selection_screen() 
+   
 # Load sprites
 player_1_sheet = pygame.image.load("assets\\images\\fighters\\"+fighter_1_data['name']+"\\spritesheet.png").convert_alpha()
 player_2_sheet = pygame.image.load("assets\\images\\fighters\\"+fighter_2_data['name']+"\\spritesheet.png").convert_alpha()
 # Create two instances of Players
 fighter_1 = Player(1, 200, 310, False, fighter_1_data, player_1_sheet, fighter_1_data['animation_steps'])
-fighter_2 = Player(2, 700, 310, True, fighter_2_data, player_2_sheet, fighter_2_data['animation_steps'])    
-
+fighter_2 = Player(2, 700, 310, True, fighter_2_data, player_2_sheet, fighter_2_data['animation_steps'])     
+       
 #=====================#
 #==#  Battle Loop  #==#
 #=====================#
@@ -416,5 +488,7 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False  
-    pygame.display.update() # Update display          
-pygame.quit() # Exit Pygame
+    pygame.display.update() # Update display       
+
+# Exit Pygame
+pygame.quit()
