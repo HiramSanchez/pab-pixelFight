@@ -14,19 +14,37 @@
 ## ⚡ Features
 - **2D movement**  
 - **Local Multiplayer** ( 2 players on the same device )  
-- **Basic Combat Mechanics** ( attack, move, block )  
+- **Basic Combat Mechanics** (Attack, Block, State effects)  
 - **Health Bars**, **Energy Bars** and **Round Timer**  
 - **Character selection** 
-- **Sound Effects** 
+- **Sound Effects** (In Construction)
 
 ## 🛠️ Tech Used  
 - Python 3.13.0  
-- Pygame library
+- Pygame library (2.6.1)
+
+## 🎞️ Screens 
+
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/dev/assets/images/ss/main.png">
+
+</br>
+
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/dev/assets/images/ss/controls.png">
+
+</br>
+
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/dev/assets/images/ss/selector.png">
+
+</br>
+
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/dev/assets/images/ss/fight.png">
+
+</br>
 
 ## 🚀 Getting Started
 
 ### Prerequisites  
-- Make sure you have **Python 3.x** installed.  
+- Make sure you have Python installed.  
 - Install the Pygame library by running:  
 ```bash
   pip install pygame
