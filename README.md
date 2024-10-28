@@ -9,18 +9,27 @@
 </br>
 
 ## 📝 Description  
-**Pixel Fight** is a simple two-player fighting game inspired by retro pixel art aesthetics. The game is built using **Python** and **Pygame**, focusing on quick fights, player vs. player mechanics, and a nostalgic vibe. This is a work in progress, and features will be added incrementally.
+**Pixel Fight** is a simple two-player fighting game inspired by retro pixel art aesthetics. The game is built using **Python** and **Pygame**, focusing on quick fights, player vs. player mechanics, and a nostalgic vibe. This is a personal, made with the porpuse of having fun and understand videogames logic.  
+This is a work in progress, and features will be added incrementally.
 
-## ⚡ Features (Planned)  
+</br>
+
+## ⚡ Features
 - **2D movement**  
-- **Local Multiplayer** (2 players on the same device)  
-- **Basic Combat Mechanics** (attack, move, block)  
-- **Health Bars** and **Round Timer**  
-- **Sound Effects**  
+- **Local Multiplayer** ( 2 players on the same device )  
+- **Basic Combat Mechanics** ( attack, move, block )  
+- **Health Bars**, **Energy Bars** and **Round Timer**  
+- **Character selection** 
+- **Sound Effects** 
+
+</br>
 
 ## 🛠️ Tech Used  
 - Python 3.13.0  
 - Pygame library
+
+
+</br>
 
 ## 🚀 Getting Started
 
