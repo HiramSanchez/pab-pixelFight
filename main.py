@@ -67,8 +67,8 @@ fighters = [
     {"name": "Raruto", "size": 128, "scale": 1.6, "offset": [34, 15], "freeze_offset": [-55,-23], "animation_steps":[6, 8, 8, 10, 3, 4, 4, 2, 3, 4]},
     {"name": "Starlight", "size": 128, "scale": 2.1, "offset": [45, 41], "freeze_offset": [-95,-87], "animation_steps":[7, 7, 8, 8, 4, 10, 10, 7, 3, 6]},
     {"name": "Onichan", "size": 128, "scale": 2, "offset": [44, 38], "freeze_offset": [-88,-75], "animation_steps":[5, 6, 7, 8, 4, 4, 4, 4, 3, 6]},
-    {"name": "Bam", "size": 128, "scale": 1.8, "offset": [40, 27], "freeze_offset": [-73,-50], "animation_steps":[6, 8, 8, 12, 6, 4, 3, 2, 2, 4]}]
-
+    {"name": "Bam", "size": 128, "scale": 1.8, "offset": [40, 27], "freeze_offset": [-73,-50], "animation_steps":[6, 8, 8, 12, 6, 4, 3, 2, 2, 4]}
+]
 # Show Fighter List
 def draw_character_selection(selected1,selected2):
 
@@ -511,22 +511,56 @@ while run:
             fight_displayed = False
             fighter_1 = Player(1, 200, 310, False, fighter_1_data, player_1_sheet, fighter_1_data['animation_steps'])
             fighter_2 = Player(2, 700, 310, True, fighter_2_data, player_2_sheet, fighter_2_data['animation_steps'])
+    
+    # Manage burn damage
+    if fighter_1.burned or fighter_2.burned:
+        if fighter_1.burned: # P1
+            current_time = pygame.time.get_ticks()
+            # time hits
+            if current_time - fighter_1.burn_start_time >= (fighter_1.burn_interval * (fighter_1.burn_ticks + 1)):
+                fighter_1.health -= 10  # Aplicar daño por quemadura
+                fighter_1.burn_ticks += 1
+                # Finish burn after 3 hits
+                if fighter_1.burn_ticks >= 3:
+                    fighter_1.burned = False             
+        if fighter_2.burned: # P2
+            current_time = pygame.time.get_ticks()
+            # time hits
+            if current_time - fighter_2.burn_start_time >= (fighter_2.burn_interval * (fighter_2.burn_ticks + 1)):
+                fighter_2.health -= 10  # Aplicar daño por quemadura
+                fighter_2.burn_ticks += 1
+                # Finish burn after 3 hits
+                if fighter_2.burn_ticks >= 3:
+                    fighter_2.burned = False 
      
-    # Manage frozen status        
-    if fighter_1.frozen or fighter_2.frozen:
+    # Manage frozen/burned status color effect
+    if fighter_1.frozen or fighter_2.frozen or fighter_1.burned or fighter_2.burned:
         if fighter_1.frozen:
             frozenChar = fighter_1
             frozenOffset = fighter_1_data['freeze_offset']
+            colorEffect = 0
         elif fighter_2.frozen:
             frozenChar = fighter_2
             frozenOffset = fighter_2_data['freeze_offset']
-        # Create Blue mask 
+            colorEffect = 0
+        elif fighter_1.burned:
+            frozenChar = fighter_1
+            frozenOffset = fighter_1_data['freeze_offset']
+            colorEffect = 1
+        elif fighter_2.burned:
+            frozenChar = fighter_2
+            frozenOffset = fighter_2_data['freeze_offset']
+            colorEffect = 1
+        # Create Blue/Red mask 
         enemy_mask = pygame.mask.from_surface(frozenChar.image)
         blue_effect = pygame.Surface(frozenChar.image.get_size(), pygame.SRCALPHA)
         for x in range(blue_effect.get_width()):
             for y in range(blue_effect.get_height()):
                 if enemy_mask.get_at((x, y)):  # mask if pixel
-                    blue_effect.set_at((x, y), (15,158,234, 100))  # add transparent blue
+                    if colorEffect == 0:
+                        blue_effect.set_at((x, y), (15,158,234, 50))  # add transparent blue
+                    if colorEffect == 1:
+                        blue_effect.set_at((x, y), (255,0,0, 50))  # add transparent red
         # flip if char flips
         if frozenChar.flip:
             flipped_blue_effect = pygame.transform.flip(blue_effect, True, False)
