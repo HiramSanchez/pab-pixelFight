@@ -34,8 +34,12 @@ class Player():
         self.dash_duration = 200  # duration in miliseconds
         self.dash_start_time = 0 
         self.frozen = False
-        self.frozen_duration = 3000 # duration in miliseconds
+        self.frozen_duration = 3000
         self.freeze_start_time = 0 
+        self.burned = False 
+        self.burn_start_time = 0
+        self.burn_interval = 2000
+        self.burn_ticks = 0 
         
     #======================#
     #==#  Load Sprites  #==#
@@ -70,10 +74,7 @@ class Player():
         self.running = False
         self.attack_type = 0
         
-        # get pressed key
         key = pygame.key.get_pressed()
-        
-        # Controlls
         if self.attacking == False and self.alive == True and round_over == False and self.frozen == False:
             
             # player 1
@@ -121,26 +122,22 @@ class Player():
                     # attack
                     self.handle_attacks(key, surface, target)
                     self.handle_spec_attacks(key, surface, target)
-        
         # Spec Move: Dash
         if self.dashing:
             if pygame.time.get_ticks() - self.dash_start_time < self.dash_duration:
                 dx = self.dash_speed if not self.flip else -self.dash_speed
             else:
                 self.dashing = False
-                self.attack_cooldown = 30
-                
+                self.attack_cooldown = 30    
         # Spec Status: Freeze
         if self.frozen:
             if pygame.time.get_ticks() - self.freeze_start_time < self.frozen_duration:
                 self.frozen = True
             else:
-                self.frozen = False
-                
+                self.frozen = False             
         # apply gravity
         self.vel_y += GRAVITY
         dy += self.vel_y
-            
         # limit screen area
         if self.rect.left + dx < 0: # X axis
             dx = -self.rect.left
@@ -149,15 +146,12 @@ class Player():
         if self.rect.bottom + dy > screen_height - 110: # Y axis
             self.vel_y = 0
             self.jump = False # restart jump delay
-            dy = screen_height - 110 - self.rect.bottom
-             
+            dy = screen_height - 110 - self.rect.bottom  
         # ensure player face each other
         self.flip = target.rect.centerx < self.rect.centerx
-        
         # apply attack cooldown
         if self.attack_cooldown >0:
             self.attack_cooldown -= 1
-        
         # update position
         self.rect.x += dx
         self.rect.y += dy
@@ -183,10 +177,10 @@ class Player():
                 
     def handle_spec_attacks(self, key, surface, target):
         if ( key[pygame.K_4] and self.player == 1 and self.energy == 100) or (key[pygame.K_SLASH] and self.player == 2 and self.energy == 100):
-            if self.fighter_name == "Bam" or self.fighter_name == "Starlight":
+            if self.fighter_name == "Bam":
                 self.attack_type = 3
                 self.dash_attack(surface, target)
-            if self.fighter_name == "Onichan"or self.fighter_name == "Raruto":
+            if self.fighter_name == "Onichan" or self.fighter_name == "Raruto" or self.fighter_name == "Starlight":
                 self.attack_type = 3
                 self.freeze_attack(surface, target)
         
@@ -245,8 +239,7 @@ class Player():
                         self.hit = False
                         self.attacking = False
                         self.attack_cooldown = 30 # hurt cooldown
-            
-            
+               
     #=================#
     #==#  Attacks  #==#
     #=================#
@@ -269,14 +262,10 @@ class Player():
             if attacking_rect.colliderect(target.rect):
                 if target.blocking == False:
                     if self.fighter_name == "Bam":
-                        target.health -= 30  # Dash Damage
-                        target.hit = True
-                    elif self.fighter_name == "Starlight":
-                        target.health -= 20  # Dash Damage
-                        self.health += 15 # Damage Heal
+                        target.health -= 35  # Dash Damage
                         target.hit = True
             # Draw hit area on green for debug
-            pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
+            #pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
     
     def attack(self, surface, target):
         if self.attack_cooldown == 0:
@@ -288,7 +277,7 @@ class Player():
                 damage = 10 
             elif self.attack_type == 2:
                 # Attack Type 2: More Range Low Damage
-                attack_width = self.rect.width * 2
+                attack_width = self.rect.width * 1.9
                 damage = 6
 
             # Creates attack area
@@ -309,14 +298,17 @@ class Player():
                     self.energy += 20
 
             # Draw hit area on green for debug
-            pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
+            #pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
             
             
     def freeze_attack(self, surface, target):
+                
         if self.attack_cooldown == 0:
             self.attacking = True
             attack_width = self.rect.width * 1.5
-            damage = 6
+            damage = 15
+            healDamage = 20
+            healSelf = 15
             self.energy -= 100
 
             # Creates attack area
@@ -330,16 +322,24 @@ class Player():
             # Check if collision happened
             if attacking_rect.colliderect(target.rect):
                 if target.blocking == False:
-                    target.frozen = True
-                    target.freeze_start_time = pygame.time.get_ticks()
-                    target.health -= damage
-                    target.hit = True
-
-
+                    if self.fighter_name == "Onichan": # freeze attack
+                        target.frozen = True
+                        target.freeze_start_time = pygame.time.get_ticks()
+                        target.health -= damage
+                        target.hit = True
+                    elif self.fighter_name == "Starlight": # Heal strike
+                        target.health -= healDamage
+                        self.health += healSelf
+                        target.hit = True
+                    elif self.fighter_name == "Raruto": # Burn attack
+                        target.burned = True
+                        target.burn_start_time = pygame.time.get_ticks()
+                        target.burn_ticks = 0
+                        target.hit = True
+                        
             # Draw hit area on green for debug
-            pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
-            
-            
+            #pygame.draw.rect(surface, (0, 255, 0), attacking_rect)        
+                    
     #================#
     #==#  Update  #==#
     #================#
