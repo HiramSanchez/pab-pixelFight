@@ -26,14 +26,12 @@
 ## 🎞️ Screens 
 </br>
 <div>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/main.png" width=500>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/controls.png"width=500>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/selector.png"width=500>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/selector2.png"width=500>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight0.png"width=500>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight.png"width=500>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight2.png"width=500>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight3.png"width=500>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/main.png" width=800>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/controls.png" width=397.5>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/selector.png" width=397.5>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight0.png" width=397.5>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight.png" width=397.5>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight3.png" width=800>
 </div>
 </br>
 
