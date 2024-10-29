@@ -45,6 +45,15 @@
 
 </br>
 
+## 📦 Assets Used  
+The game includes assets downloaded from the following sources, all under a **free license** :  
+
+- **[Craftpix](https://craftpix.net/)** : Assets used according to their **[free license](https://craftpix.net/file-licenses/)** .
+- **[Itch.io](https://itch.io/)** : Assets used following the licensing terms provided by the author.   
+- **[Eder Munizz](https://edermunizz.itch.io/)** : Assets used following the licensing terms provided by the author.  
+
+Please refer to their respective licenses for more details.
+
 ## 🚀 Getting Started
 
 ### Prerequisites  
