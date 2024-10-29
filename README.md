@@ -24,25 +24,17 @@
 - Pygame library (2.6.1)
 
 ## 🎞️ Screens 
-
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/main.png">
-
 </br>
-
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/controls.png">
-
-</br>
-
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/selector.png">
-
-</br>
-
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight.png">
-
-</br>
-
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight2.png">
-
+<div>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/main.png" width=500>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/controls.png"width=500>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/selector.png"width=500>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/selector2.png"width=500>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight0.png"width=500>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight.png"width=500>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight2.png"width=500>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight3.png"width=500>
+</div>
 </br>
 
 ## 📦 Assets Used  
