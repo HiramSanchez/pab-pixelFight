@@ -25,19 +25,23 @@
 
 ## 🎞️ Screens 
 
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/dev/assets/images/ss/main.png">
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/main.png">
 
 </br>
 
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/dev/assets/images/ss/controls.png">
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/controls.png">
 
 </br>
 
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/dev/assets/images/ss/selector.png">
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/selector.png">
 
 </br>
 
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/dev/assets/images/ss/fight.png">
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight.png">
+
+</br>
+
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight2.png">
 
 </br>
 
