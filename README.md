@@ -2,8 +2,6 @@
 
 [![Java](https://img.shields.io/badge/Python-3.13.0-blue)](https://www.oracle.com/java/)  
 
-</br>
-
 ## 📝 Description  
 **Pixel Fight** is a simple two-player fighting game inspired by retro pixel art aesthetics. The game is built using **Python** and **Pygame**, focusing on quick fights, player vs. player mechanics, and a nostalgic vibe. This is a personal project, made with the porpuse of having fun and understand videogames logic.
 
