@@ -1,67 +1,102 @@
 import pygame
-class Player():
-    
+
+class Player:
+
     #========================#
     #==#  Initialization  #==#
     #========================#
     def __init__(self, player, x, y, flip, data, sprite_sheet, animation_steps):
         self.player = player
-        self.size = data['size']
-        self.image_scale = data['scale']
-        self.offset = data['offset']
-        self.fighter_name = data['name']
+        self.size = data["size"]
+        self.image_scale = data["scale"]
+        self.offset = data["offset"]
+        self.fighter_name = data["name"]
         self.flip = flip
+
         self.animation_list = self.load_images(sprite_sheet, animation_steps)
         self.action = 0
         self.frame_index = 0
         self.image = self.animation_list[self.action][self.frame_index]
         self.update_time = pygame.time.get_ticks()
+
+        # Gameplay rect (hitbox)
         self.rect = pygame.Rect((x, y, 80, 180))
+
+        # Movement
         self.vel_y = 0
         self.jump = False
         self.running = False
+
+        # Combat state
         self.attacking = False
         self.blocking = False
         self.hit = False
         self.alive = True
+
+        # Attack
         self.attack_type = 0
         self.attack_cooldown = 0
+
+        # Stats
         self.health = 100
         self.energy = 10
-        # Spec Moves
+
+        # Spec Moves / Status
         self.dashing = False
-        self.dash_speed = 20  # Speed of dash
-        self.dash_duration = 200  # duration in miliseconds
-        self.dash_start_time = 0 
+        self.dash_speed = 20
+        self.dash_duration = 200
+        self.dash_start_time = 0
+
         self.frozen = False
         self.frozen_duration = 3000
-        self.freeze_start_time = 0 
-        self.burned = False 
+        self.freeze_start_time = 0
+
+        self.burned = False
         self.burn_start_time = 0
         self.burn_interval = 2000
-        self.burn_ticks = 0 
-        
+        self.burn_ticks = 0
+
+        # Freeze visuals control (NEW)
+        self._freeze_frame_locked = False
+        self._locked_action = 0
+        self._locked_frame_index = 0
+
+
     #======================#
     #==#  Load Sprites  #==#
     #======================#
     def load_images(self, sprite_sheet, animation_steps):
         animation_list = []
-        for y, animation in enumerate(animation_steps):
+        for y, frames_in_row in enumerate(animation_steps):
             temp_img_list = []
-            for x in range(animation):
-                temp_img = sprite_sheet.subsurface(x * self.size, y * self.size, self.size, self.size)
-                temp_img_list.append(pygame.transform.scale(temp_img, (self.size * self.image_scale, self.size * self.image_scale)))
+            for x in range(frames_in_row):
+                temp_img = sprite_sheet.subsurface(
+                    x * self.size, y * self.size, self.size, self.size
+                )
+                temp_img_list.append(
+                    pygame.transform.scale(
+                        temp_img,
+                        (self.size * self.image_scale, self.size * self.image_scale),
+                    )
+                )
             animation_list.append(temp_img_list)
         return animation_list
-    
+
+
     #==============#
     #==#  Draw  #==#
     #==============#
     def draw(self, surface):
         img = pygame.transform.flip(self.image, self.flip, False)
-        # pygame.draw.rect(surface, (255,0,0), self.rect)
-        surface.blit(img, (self.rect.x - (self.offset[0] * self.image_scale), self.rect.y - (self.offset[1] * self.image_scale)))
-    
+        surface.blit(
+            img,
+            (
+                self.rect.x - (self.offset[0] * self.image_scale),
+                self.rect.y - (self.offset[1] * self.image_scale),
+            ),
+        )
+
+
     #==================#
     #==#  Movement  #==#
     #==================#
@@ -71,12 +106,15 @@ class Player():
         JUMP_HEIGHT = -30
         dx = 0
         dy = 0
+
         self.running = False
         self.attack_type = 0
-        
+
         key = pygame.key.get_pressed()
+
+        # Mientras frozen: NO input / NO dash start. Solo gravedad y límites.
         if self.attacking == False and self.alive == True and round_over == False and self.frozen == False:
-            
+
             # player 1
             if self.player == 1:
                 # block
@@ -84,6 +122,7 @@ class Player():
                     self.blocking = True
                 else:
                     self.blocking = False
+
                 if not self.blocking:
                     # walk
                     if key[pygame.K_a]:
@@ -92,21 +131,24 @@ class Player():
                     if key[pygame.K_d]:
                         dx = SPEED
                         self.running = True
+
                     # jump
                     if key[pygame.K_w] and self.jump == False:
                         self.vel_y = JUMP_HEIGHT
                         self.jump = True
+
                     # attack
                     self.handle_attacks(key, surface, target)
                     self.handle_spec_attacks(key, surface, target)
-            
-            # player 2  
+
+            # player 2
             if self.player == 2:
                 # block
                 if key[pygame.K_m]:
                     self.blocking = True
                 else:
                     self.blocking = False
+
                 if not self.blocking:
                     # walk
                     if key[pygame.K_LEFT]:
@@ -115,180 +157,219 @@ class Player():
                     if key[pygame.K_RIGHT]:
                         dx = SPEED
                         self.running = True
+
                     # jump
                     if key[pygame.K_UP] and self.jump == False:
                         self.vel_y = JUMP_HEIGHT
                         self.jump = True
+
                     # attack
                     self.handle_attacks(key, surface, target)
                     self.handle_spec_attacks(key, surface, target)
-        # Spec Move: Dash
+
+        # Spec Move: Dash (si ya está dashing, se mueve aunque no haya input)
         if self.dashing:
             if pygame.time.get_ticks() - self.dash_start_time < self.dash_duration:
                 dx = self.dash_speed if not self.flip else -self.dash_speed
             else:
                 self.dashing = False
-                self.attack_cooldown = 30    
-        # Spec Status: Freeze
-        if self.frozen:
-            if pygame.time.get_ticks() - self.freeze_start_time < self.frozen_duration:
-                self.frozen = True
-            else:
-                self.frozen = False             
+                self.attack_cooldown = 30
+
         # apply gravity
         self.vel_y += GRAVITY
         dy += self.vel_y
+
         # limit screen area
-        if self.rect.left + dx < 0: # X axis
+        if self.rect.left + dx < 0:
             dx = -self.rect.left
         if self.rect.right + dx > screen_width:
-            dx = screen_width -self.rect.right
-        if self.rect.bottom + dy > screen_height - 110: # Y axis
+            dx = screen_width - self.rect.right
+        if self.rect.bottom + dy > screen_height - 110:
             self.vel_y = 0
-            self.jump = False # restart jump delay
-            dy = screen_height - 110 - self.rect.bottom  
+            self.jump = False
+            dy = screen_height - 110 - self.rect.bottom
+
         # ensure player face each other
         self.flip = target.rect.centerx < self.rect.centerx
+
         # apply attack cooldown
-        if self.attack_cooldown >0:
+        if self.attack_cooldown > 0:
             self.attack_cooldown -= 1
+
         # update position
         self.rect.x += dx
         self.rect.y += dy
-        
-    #========================# 
+
+
+    #========================#
     #==#  Handle Attacks  #==#
     #========================#
     def handle_attacks(self, key, surface, target):
-        if self.player == 1: # P1 Attack controls
+        if self.player == 1:
             if key[pygame.K_2] or key[pygame.K_3]:
                 if key[pygame.K_2]:
                     self.attack_type = 1
                 elif key[pygame.K_3]:
                     self.attack_type = 2
-                self.attack(surface, target)    
-        elif self.player == 2: # P2 Attack controls 
+                self.attack(surface, target)
+
+        elif self.player == 2:
             if key[pygame.K_COMMA] or key[pygame.K_PERIOD]:
                 if key[pygame.K_COMMA]:
                     self.attack_type = 1
                 elif key[pygame.K_PERIOD]:
                     self.attack_type = 2
                 self.attack(surface, target)
-                
+
     def handle_spec_attacks(self, key, surface, target):
-        if ( key[pygame.K_4] and self.player == 1 and self.energy == 100) or (key[pygame.K_SLASH] and self.player == 2 and self.energy == 100):
+        # CHANGE: >= 100 (robusto)
+        if (
+            (key[pygame.K_4] and self.player == 1 and self.energy >= 100)
+            or (key[pygame.K_SLASH] and self.player == 2 and self.energy >= 100)
+        ):
             if self.fighter_name == "Bam":
                 self.attack_type = 3
                 self.dash_attack(surface, target)
-            if self.fighter_name == "Onichan" or self.fighter_name == "Raruto" or self.fighter_name == "Starlight":
+            else:
                 self.attack_type = 3
                 self.freeze_attack(surface, target)
-        
-    #===================# 
+
+
+    #===================#
     #==#  Animation  #==#
     #===================#
-    def update(self): #handle animation updates
-        # Checks current action
-        if self.energy >= 100: # Keeps energy at 100 max
+    def update(self):
+        now = pygame.time.get_ticks()
+
+        # Clamp
+        if self.energy >= 100:
             self.energy = 100
-        if self.health >= 100: # Keeps live at 100 max
+        if self.health >= 100:
             self.health = 100
-        if self.health <= 0: # Keeps live at 0 min
+
+        # Death
+        if self.health <= 0:
             self.health = 0
             self.alive = False
-            self.update_action(9) #9: death
+            self.update_action(9)  # death
+
+        # Freeze timing (mover aquí es más estable)
+        if self.frozen:
+            if now - self.freeze_start_time >= self.frozen_duration:
+                self.frozen = False
+                self._freeze_frame_locked = False  # libera frame lock
+
+        # ===== Freeze animation lock (NEW) =====
+        # Si está congelado:
+        # - bloquea el frame actual (o si está en hit, bloquea el último frame de hit)
+        # - NO avanza frame_index
+        if self.frozen:
+            if not self._freeze_frame_locked:
+                # Si ya está en hit, congela en el último frame de hit para efecto "estatua"
+                if self.hit or self.action == 8:
+                    self._locked_action = 8
+                    self._locked_frame_index = len(self.animation_list[8]) - 1
+                else:
+                    # congela en el frame actual (acción actual)
+                    self._locked_action = self.action
+                    self._locked_frame_index = self.frame_index
+
+                self._freeze_frame_locked = True
+
+            self.action = self._locked_action
+            self.frame_index = max(0, min(self._locked_frame_index, len(self.animation_list[self.action]) - 1))
+            self.image = self.animation_list[self.action][self.frame_index]
+            return  # IMPORTANT: no seguir con lógica normal de animación
+
+        # ===== Normal state machine =====
+        if not self.alive:
+            self.update_action(9)
         elif self.blocking:
-            self.update_action(7) #7: block
-        elif self.hit == True:
-            self.update_action(8) #8: hit
-        elif self.attacking == True:
+            self.update_action(7)
+        elif self.hit:
+            self.update_action(8)
+        elif self.attacking:
             if self.attack_type == 1:
-                self.update_action(4) #4: attack 1
+                self.update_action(4)
             elif self.attack_type == 2:
-                self.update_action(5) #5: attack 2
+                self.update_action(5)
             elif self.attack_type == 3:
-                self.update_action(6) #6: Spec Attack
-        elif self.jump == True:
-            self.update_action(3) #3: jump
-        elif self.running == True:
-            self.update_action(2) #2: run
+                self.update_action(6)
+        elif self.jump:
+            self.update_action(3)
+        elif self.running:
+            self.update_action(2)
         else:
-            self.update_action(0) #0: idle
-        
-        # updates image
-        animation_cooldown = 50 # sprite speed
+            self.update_action(0)
+
+        # update frames
+        animation_cooldown = 50
         self.image = self.animation_list[self.action][self.frame_index]
-        if pygame.time.get_ticks() - self.update_time > animation_cooldown: # Checks time to update
+        if now - self.update_time > animation_cooldown:
             self.frame_index += 1
-            self.update_time = pygame.time.get_ticks()
-        # Checks if the animation finished
+            self.update_time = now
+
+        # animation end handling
         if self.frame_index >= len(self.animation_list[self.action]):
-            if self.alive == False:
+            if not self.alive:
                 self.frame_index = len(self.animation_list[self.action]) - 1
             else:
-                self.frame_index = 0 # restart sprite
-                # Checks if the attack was excecuted
-                if self.action == 4 or self.action == 5 or self.action == 6:
+                self.frame_index = 0
+
+                # attack finished
+                if self.action in (4, 5, 6):
                     self.attacking = False
-                    self.attack_cooldown = 30 # attack cooldown
-                # Checks if damage was taken
+                    self.attack_cooldown = 30
+
+                # hit finished
                 if self.action == 8:
-                    if self.frozen:
-                        self.frame_index = len(self.animation_list[self.action]) - 1
-                    else:
-                        self.hit = False
-                        self.attacking = False
-                        self.attack_cooldown = 30 # hurt cooldown
-               
+                    self.hit = False
+                    self.attacking = False
+                    self.attack_cooldown = 30
+
+
     #=================#
     #==#  Attacks  #==#
     #=================#
-    
     def dash_attack(self, surface, target):
         if self.attack_cooldown == 0:
             self.attacking = True
             self.dashing = True
             self.dash_start_time = pygame.time.get_ticks()
             self.energy -= 100
-            
-            attack_width = self.rect.width * 3.25  # Define dash range
+
+            attack_width = self.rect.width * 3.25
             attacking_rect = pygame.Rect(
                 self.rect.centerx - (attack_width * self.flip),
                 self.rect.y,
                 attack_width,
-                self.rect.height
+                self.rect.height,
             )
-            # Check if collision happened
+
             if attacking_rect.colliderect(target.rect):
-                if target.blocking == False:
+                if not target.blocking:
                     if self.fighter_name == "Bam":
-                        target.health -= 35  # Dash Damage
+                        target.health -= 35
                         target.hit = True
-            # Draw hit area on green for debug
-            #pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
-    
+
     def attack(self, surface, target):
         if self.attack_cooldown == 0:
             self.attacking = True
-            # Config range and attack according to attack type
+
             if self.attack_type == 1:
-                # Attack Type 1: Low Range More Damage
-                attack_width = self.rect.width * 1.5  
-                damage = 10 
-            elif self.attack_type == 2:
-                # Attack Type 2: More Range Low Damage
+                attack_width = self.rect.width * 1.5
+                damage = 10
+            else:
                 attack_width = self.rect.width * 1.9
                 damage = 6
 
-            # Creates attack area
             attacking_rect = pygame.Rect(
                 self.rect.centerx - (attack_width * self.flip),
                 self.rect.y,
                 attack_width,
-                self.rect.height
+                self.rect.height,
             )
 
-            # Check if collision happened
             if attacking_rect.colliderect(target.rect):
                 if target.blocking:
                     self.energy += 10
@@ -297,12 +378,7 @@ class Player():
                     target.hit = True
                     self.energy += 20
 
-            # Draw hit area on green for debug
-            #pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
-            
-            
     def freeze_attack(self, surface, target):
-                
         if self.attack_cooldown == 0:
             self.attacking = True
             attack_width = self.rect.width * 1.5
@@ -311,35 +387,33 @@ class Player():
             healSelf = 15
             self.energy -= 100
 
-            # Creates attack area
             attacking_rect = pygame.Rect(
                 self.rect.centerx - (attack_width * self.flip),
                 self.rect.y,
                 attack_width,
-                self.rect.height
+                self.rect.height,
             )
 
-            # Check if collision happened
             if attacking_rect.colliderect(target.rect):
-                if target.blocking == False:
-                    if self.fighter_name == "Onichan": # freeze attack
+                if not target.blocking:
+                    if self.fighter_name == "Onichan":
                         target.frozen = True
                         target.freeze_start_time = pygame.time.get_ticks()
                         target.health -= damage
                         target.hit = True
-                    elif self.fighter_name == "Starlight": # Heal strike
+
+                    elif self.fighter_name == "Starlight":
                         target.health -= healDamage
                         self.health += healSelf
                         target.hit = True
-                    elif self.fighter_name == "Raruto": # Burn attack
+
+                    elif self.fighter_name == "Raruto":
                         target.burned = True
                         target.burn_start_time = pygame.time.get_ticks()
                         target.burn_ticks = 0
                         target.hit = True
-                        
-            # Draw hit area on green for debug
-            #pygame.draw.rect(surface, (0, 255, 0), attacking_rect)        
-                    
+
+
     #================#
     #==#  Update  #==#
     #================#
