@@ -22,6 +22,8 @@ Severity indicates impact on reliability or future change, not effort.
   normalize tracked folder names and every reference in one reviewed change.
 - **Change risk:** Medium; case-only renames are awkward on Windows/Git.
 - **Dependencies:** PF-003 asset paths/cache; cross-platform smoke test.
+- **Status:** Resolved in Phase 2 with explicit case-correct `asset_dir`
+  configuration and exact-case asset validation.
 
 ### PF-002 — Match navigation contradicts code comment
 
@@ -53,6 +55,8 @@ Severity indicates impact on reliability or future change, not effort.
   and compose paths with `/`; later centralize loading.
 - **Change risk:** Low-to-medium; validate every asset and packaging scenario.
 - **Dependencies:** PF-001 and PF-006.
+- **Status:** Resolved in Phase 2. `AssetManager` anchors `pathlib` paths to the
+  repository-local asset directory; root and parent-CWD smoke checks pass.
 
 ### PF-004 — Simultaneous KO is biased
 
@@ -98,6 +102,8 @@ Severity indicates impact on reliability or future change, not effort.
   cache by path/configuration.
 - **Change risk:** Low if output dimensions/alpha are preserved.
 - **Dependencies:** PF-003 and an asset manager/cache.
+- **Status:** Resolved in Phase 2. Selector assets are preloaded on entry and
+  repeated access uses cached portraits, spritesheets, and idle frames.
 
 ### PF-007 — Status overlay is rebuilt pixel by pixel
 
@@ -356,6 +362,8 @@ Severity indicates impact on reliability or future change, not effort.
   setup.
 - **Change risk:** Low.
 - **Dependencies:** Asset cache.
+- **Status:** Resolved in Phase 2. Fixed backgrounds are scaled once and the
+  mirrored skull is created once during startup.
 
 ### PF-025 — No automated tests or dependency baseline
 

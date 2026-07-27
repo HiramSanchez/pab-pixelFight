@@ -10,27 +10,26 @@ more reliable, portable, and extensible in small steps.
 - Entry point: `main.py` (the repository currently has no `src/` directory).
 - Fighter model: `player.py`.
 - Runtime resources: `assets/images/` and `assets/fonts/`.
-- Current design: two modules, module-level Pygame setup, nested blocking loops,
-  and shared mutable match state in `main.py`.
+- Current design: module-level Pygame setup, nested blocking loops, shared
+  mutable match state in `main.py`, and a small cached resource boundary.
 
 ## Current architecture
 
 ### Screen and match flow
 
-1. Importing `main.py` initializes Pygame, creates a 1000×600 display, and loads
-   common images and fonts.
+1. Importing `main.py` initializes Pygame, creates a 1000×600 display, and asks
+   `AssetManager` for common images and fonts.
 2. `initial_screen()` owns the menu loop. Controls are an overlay inside that
    same loop.
 3. `character_selection_screen()` owns the selector loop and returns two
    character dictionaries, or `(None, None)` to return to the menu.
-4. `create_fighters()` loads both spritesheets and creates two `Player`
-   instances.
+4. `create_fighters()` reuses cached, scaled animation lists and creates two
+   `Player` instances.
 5. The battle loop in the `if __name__ == "__main__"` block owns the HUD,
    countdown, timer, status-effect processing/rendering, round recreation,
    victory display, and events. It delegates round outcome and score rules to
    `round_rules.py`.
-6. A completed best-of-five match returns to the main menu, despite the nearby
-   comment saying it returns to selection.
+6. A completed best-of-five match returns to the main menu.
 
 There is no scene manager. Menu, selection, and battle are nested `while`
 loops. Only the outermost loop coordinates transitions.
@@ -49,6 +48,11 @@ but advanced by `main.py`.
 `round_rules.py` is deliberately independent from Pygame. It resolves KO,
 timeout, draws, score deltas, and the first-to-three match threshold. It does
 not own timers, rendering, Player mutation, or scenes.
+
+`asset_manager.py` resolves resources from the repository-local `assets/`
+directory, never from process CWD. It caches images, fonts, selector idle
+frames, and scaled battle animations. Fixed background/skull transforms are
+created once during display setup.
 
 Character dictionaries and loaded spritesheets flow from `main.py` into each
 `Player`. Every frame, `main.py` passes the opponent and the global
@@ -156,23 +160,20 @@ three round wins displays victory for two seconds and returns to the main menu.
 
 Each dictionary in `main.py:fighters` contains:
 
-- `name`: display name and case-sensitive runtime folder component.
+- `name`: display name.
+- `asset_dir`: exact case-sensitive runtime folder component.
 - `size`: source cell width/height in pixels; currently 128 for all fighters.
 - `scale`: render scale applied to every extracted cell.
 - `offset`: scaled sprite displacement from the shared body rectangle.
 - `freeze_offset`: unscaled screen displacement used only for the tint overlay.
 - `animation_steps`: frame count for rows 0 through 9 in the index table above.
 
-| Character | `size` | `scale` | `offset` | `freeze_offset` | `animation_steps` |
-|---|---:|---:|---|---|---|
-| Raruto | 128 | 1.6 | `[34, 15]` | `[-55, -23]` | `[6, 8, 8, 10, 3, 4, 4, 2, 3, 4]` |
-| Starlight | 128 | 2.1 | `[45, 41]` | `[-95, -87]` | `[7, 7, 8, 8, 4, 10, 10, 7, 3, 6]` |
-| Onichan | 128 | 2.0 | `[44, 38]` | `[-88, -75]` | `[5, 6, 7, 8, 4, 4, 4, 4, 3, 6]` |
-| Bam | 128 | 1.8 | `[40, 27]` | `[-73, -50]` | `[6, 8, 8, 12, 6, 4, 3, 2, 2, 4]` |
-
-Folder case differs from display-name case for `onichan` and `bam`. It works on
-the current case-insensitive Windows filesystem, but fails on a case-sensitive
-filesystem because code requests `Onichan` and `Bam`.
+| Character | `asset_dir` | `size` | `scale` | `offset` | `freeze_offset` | `animation_steps` |
+|---|---|---:|---:|---|---|---|
+| Raruto | `Raruto` | 128 | 1.6 | `[34, 15]` | `[-55, -23]` | `[6, 8, 8, 10, 3, 4, 4, 2, 3, 4]` |
+| Starlight | `Starlight` | 128 | 2.1 | `[45, 41]` | `[-95, -87]` | `[7, 7, 8, 8, 4, 10, 10, 7, 3, 6]` |
+| Onichan | `onichan` | 128 | 2.0 | `[44, 38]` | `[-88, -75]` | `[5, 6, 7, 8, 4, 4, 4, 4, 3, 6]` |
+| Bam | `bam` | 128 | 1.8 | `[40, 27]` | `[-73, -50]` | `[6, 8, 8, 12, 6, 4, 3, 2, 2, 4]` |
 
 ## Asset conventions
 
@@ -188,8 +189,8 @@ assets/
     └── ss/*.png
 ```
 
-- Runtime paths are relative to the current working directory and currently use
-  Windows `\` separators.
+- Runtime paths use `pathlib`, are anchored to the source repository, and are
+  independent of the current working directory.
 - Each `pick.png` is 129×129.
 - Each spritesheet uses 128×128 cells, ten rows, and enough columns for the
   largest configured row: Raruto 10×10 cells, Starlight 10×10, Onichan 8×10,
@@ -208,19 +209,13 @@ The prioritized evidence and remediation details live in
 
 ### Functional bugs
 
-- Linux/macOS asset lookup fails for Onichan and Bam because folder case does
-  not match `name`.
 - Bam's dash can move while frozen or after round end and only hits at startup.
 - Importing `main` shuts down Pygame because final `pygame.quit()` is outside
   the main guard.
-- Match completion returns to the menu, not the selector stated by the comment.
 
 ### Performance
 
-- Selector portrait and spritesheet files are reloaded and frames re-extracted
-  every frame for both players.
 - Freeze/burn masks and tint surfaces are rebuilt with nested per-pixel loops.
-- Battle background scaling and Player 2 skull flipping repeat every frame.
 
 ### Architecture and maintainability
 
@@ -233,8 +228,6 @@ The prioritized evidence and remediation details live in
 
 ### Portability
 
-- Runtime paths depend on Windows separators, exact current working directory,
-  and (for two fighters) case-insensitive lookup.
 - Display and asset loading occur at import time.
 
 ### Optional gameplay improvements (not confirmed bugs)
@@ -276,7 +269,7 @@ py -3.13 -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
-python -m py_compile main.py player.py round_rules.py scripts/validate_assets.py scripts/smoke_test.py
+python -m py_compile main.py player.py round_rules.py asset_manager.py scripts/validate_assets.py scripts/smoke_test.py
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py

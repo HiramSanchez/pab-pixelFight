@@ -72,8 +72,11 @@ Please refer to their respective licenses for more details.
 
 ```bash
 python -m pip install -r requirements-dev.txt
-python -m py_compile main.py player.py round_rules.py scripts/validate_assets.py scripts/smoke_test.py
+python -m py_compile main.py player.py round_rules.py asset_manager.py scripts/validate_assets.py scripts/smoke_test.py
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py
 ```
+
+The game can be launched from the repository root with `python main.py`, or
+from another working directory by passing the path to `main.py`.

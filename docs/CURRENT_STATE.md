@@ -6,14 +6,15 @@ than a desired design.
 
 ## Repository and runtime baseline
 
-- Runtime modules exist at repository root: `main.py`, `player.py`, and the pure
-  `round_rules.py`.
+- Runtime modules exist at repository root: `main.py`, `player.py`, the pure
+  `round_rules.py`, and `asset_manager.py`.
 - There is no `src/`, package metadata, or scene framework. Focused pytest
   coverage exists for round rules and fresh Player state.
 - Python 3.13.0 and Pygame 2.6.1 are the documented and locally validated
   versions.
 - The window is fixed at 1000×600 and the target loop rate is 60 FPS.
-- Asset loading depends on launching from the repository root on Windows.
+- Asset loading is anchored to the repository-local `assets/` directory and is
+  independent of launch CWD.
 
 ## Complete application flow
 
@@ -63,15 +64,14 @@ Up/Down wrap through the four-item list. Both may select the same fighter. The
 central list outlines each player's choice; a shared choice alternates color
 using wall-clock `time.time()`.
 
-Each selector frame:
+When the selector is entered, all four portraits and idle-frame lists are
+requested once from `AssetManager`. Each selector frame then:
 
 1. scrolls and draws the background;
 2. renders labels and choices;
-3. reloads both `pick.png` files;
-4. reloads both spritesheets;
-5. extracts idle frames from both sheets;
-6. advances one shared preview frame index about every 100 ms;
-7. handles keyboard/mouse events.
+3. retrieves both portraits and idle-frame lists from in-memory caches;
+4. advances one shared preview frame index about every 100 ms;
+5. handles keyboard/mouse events.
 
 Enter records a provisional round start and returns the two shared configuration
 dictionaries. Back returns `(None, None)`. The outer loop then returns to the
@@ -231,11 +231,13 @@ It does not check collision during travel.
 
 ## Animation and asset management
 
-`Player.load_images()` slices one row per action using character-specific frame
-counts, scales every extracted frame, and stores them per Player. The main
-selector has a separate idle-frame extraction path that does not reuse this
-cache. Battle animation advances at 50 ms per frame using elapsed milliseconds;
-it advances at most one frame per call and does not carry extra elapsed time.
+`AssetManager.fighter_animations()` slices and scales one cached animation list
+per character configuration. New rounds share these immutable surfaces between
+new Player instances. The selector has a separate cached, unscaled idle list so
+its baseline preview size remains unchanged. `Player.load_images()` remains as
+a compatibility fallback for direct construction and tests. Battle animation
+advances at 50 ms per frame using elapsed milliseconds; it advances at most one
+frame per call and does not carry extra elapsed time.
 
 The status overlay creates a mask from `Player.image`, allocates a transparent
 surface of the full scaled cell, and loops over every pixel every battle frame.
@@ -249,7 +251,8 @@ flowchart LR
     PYG[pygame] --> M[main.py]
     PYG --> P[player.py / Player]
     R[round_rules.py] --> M
-    A[assets and fonts] --> M
+    A[assets and fonts] --> AM[asset_manager.py]
+    AM --> M
     M -->|character data, spritesheet, player number| P
     M -->|round_over, opponent, display bounds| P
     P -->|mutates health, status, energy| P
@@ -258,6 +261,11 @@ flowchart LR
     M -->|health and timeout| R
     R -->|round result and score delta| M
 ```
+
+`AssetManager` uses a `Path` rooted beside its module and caches by resolved
+path/configuration. Fighter display names are separate from exact directory
+keys, so `Onichan` maps to `onichan` and `Bam` maps to `bam` on case-sensitive
+filesystems.
 
 Functions in `main.py` depend implicitly on module globals including `screen`,
 fonts, colors, `clock`, fighter configuration, loaded images, timer constants,

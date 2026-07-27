@@ -41,6 +41,10 @@ scenes.py
 asset_manager.py
 ```
 
+The Phase 2 baseline now uses this intermediate root-level `asset_manager.py`.
+It should move under `src/resources/` only during a later package migration;
+its cache and source-root path behavior should be preserved.
+
 Split `scenes.py` and move into `src/` only when file size or packaging makes
 the benefit concrete.
 

@@ -5,7 +5,17 @@ class Player:
     #========================#
     #==#  Initialization  #==#
     #========================#
-    def __init__(self, player, x, y, flip, data, sprite_sheet, animation_steps):
+    def __init__(
+        self,
+        player,
+        x,
+        y,
+        flip,
+        data,
+        sprite_sheet,
+        animation_steps,
+        animation_list=None,
+    ):
         self.player = player
         self.size = data["size"]
         self.image_scale = data["scale"]
@@ -13,7 +23,10 @@ class Player:
         self.fighter_name = data["name"]
         self.flip = flip
 
-        self.animation_list = self.load_images(sprite_sheet, animation_steps)
+        if animation_list is None:
+            self.animation_list = self.load_images(sprite_sheet, animation_steps)
+        else:
+            self.animation_list = animation_list
         self.action = 0
         self.frame_index = 0
         self.image = self.animation_list[self.action][self.frame_index]

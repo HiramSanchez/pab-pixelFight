@@ -1,5 +1,6 @@
 import pygame
 import time
+from asset_manager import AssetManager
 from player import Player
 from round_rules import apply_score, match_winner, resolve_round
 
@@ -12,6 +13,7 @@ SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Pixel Fight")
+assets = AssetManager()
 
 #========================#
 #==#  Game Variables  #==#
@@ -52,30 +54,37 @@ max_last_blink_time = pygame.time.get_ticks()
 MAX_BLINK_INTERVAL = 500
 
 # Load Assets
-bg_image_battle = pygame.image.load("assets\\images\\backgrounds\\battleground.png").convert_alpha()
-bg_image_start = pygame.image.load("assets\\images\\backgrounds\\start.png").convert_alpha()
-skull_icon = pygame.image.load("assets\\images\\icons\\skull.png").convert_alpha()
+bg_image_battle = pygame.transform.scale(
+    assets.image("images/backgrounds/battleground.png"),
+    (SCREEN_WIDTH, SCREEN_HEIGHT),
+)
+bg_image_start = pygame.transform.scale(
+    assets.image("images/backgrounds/start.png"),
+    (SCREEN_WIDTH, SCREEN_HEIGHT),
+)
+skull_icon = assets.image("images/icons/skull.png")
+flipped_skull_icon = pygame.transform.flip(skull_icon, True, False)
 
 # Constants
 WINS_TEXT = "wins"
 VICTORY_TEXT = "victory!"
 FIGHT_TEXT = "FIGHT!"
 
-timer_font = pygame.font.Font("assets\\fonts\\HelvetiPixel.ttf", 80)
-button_font = pygame.font.Font("assets\\fonts\\HelvetiPixel.ttf", 40)
-small_button_font = pygame.font.Font("assets\\fonts\\HelvetiPixel.ttf", 30)
-title_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 120)
-count_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 80)
-score_font = pygame.font.Font("assets\\fonts\\PixelTimesNewRoman.ttf", 40)
+timer_font = assets.font("fonts/HelvetiPixel.ttf", 80)
+button_font = assets.font("fonts/HelvetiPixel.ttf", 40)
+small_button_font = assets.font("fonts/HelvetiPixel.ttf", 30)
+title_font = assets.font("fonts/PixelTimesNewRoman.ttf", 120)
+count_font = assets.font("fonts/PixelTimesNewRoman.ttf", 80)
+score_font = assets.font("fonts/PixelTimesNewRoman.ttf", 40)
 
 #======================#
 #==#  Fighter List  #==#
 #======================#
 fighters = [
-    {"name": "Raruto", "size": 128, "scale": 1.6, "offset": [34, 15], "freeze_offset": [-55, -23], "animation_steps":[6, 8, 8, 10, 3, 4, 4, 2, 3, 4]},
-    {"name": "Starlight", "size": 128, "scale": 2.1, "offset": [45, 41], "freeze_offset": [-95, -87], "animation_steps":[7, 7, 8, 8, 4, 10, 10, 7, 3, 6]},
-    {"name": "Onichan", "size": 128, "scale": 2, "offset": [44, 38], "freeze_offset": [-88, -75], "animation_steps":[5, 6, 7, 8, 4, 4, 4, 4, 3, 6]},
-    {"name": "Bam", "size": 128, "scale": 1.8, "offset": [40, 27], "freeze_offset": [-73, -50], "animation_steps":[6, 8, 8, 12, 6, 4, 3, 2, 2, 4]}
+    {"name": "Raruto", "asset_dir": "Raruto", "size": 128, "scale": 1.6, "offset": [34, 15], "freeze_offset": [-55, -23], "animation_steps":[6, 8, 8, 10, 3, 4, 4, 2, 3, 4]},
+    {"name": "Starlight", "asset_dir": "Starlight", "size": 128, "scale": 2.1, "offset": [45, 41], "freeze_offset": [-95, -87], "animation_steps":[7, 7, 8, 8, 4, 10, 10, 7, 3, 6]},
+    {"name": "Onichan", "asset_dir": "onichan", "size": 128, "scale": 2, "offset": [44, 38], "freeze_offset": [-88, -75], "animation_steps":[5, 6, 7, 8, 4, 4, 4, 4, 3, 6]},
+    {"name": "Bam", "asset_dir": "bam", "size": 128, "scale": 1.8, "offset": [40, 27], "freeze_offset": [-73, -50], "animation_steps":[6, 8, 8, 12, 6, 4, 3, 2, 2, 4]}
 ]
 
 # Show Fighter List
@@ -110,12 +119,12 @@ def initial_screen():
     buttonb_x, buttonb_y = 70, 530 - button_Back_height
     buttonb_rect = pygame.Rect(buttonb_x, buttonb_y, button_Back_width, button_Back_height)
 
-    bg_image = pygame.image.load("assets\\images\\backgrounds\\scrolling.png").convert()
+    bg_image = assets.image("images/backgrounds/scrolling.png", alpha=False)
     bg_width = bg_image.get_width()
     x_pos = 0
     scroll_speed = 0.2
 
-    controls_img = pygame.image.load("assets\\images\\backgrounds\\controls.png").convert_alpha()
+    controls_img = assets.image("images/backgrounds/controls.png")
     control_show = False
 
     while True:
@@ -184,14 +193,16 @@ def character_selection_screen():
     elapsed_time = 0
     frame_index = 0
 
-    bg_image = pygame.image.load("assets\\images\\backgrounds\\scrolling.png").convert()
+    bg_image = assets.image("images/backgrounds/scrolling.png", alpha=False)
     bg_width = bg_image.get_width()
     x_pos = 0
-    scroll_speed = 2
+    scroll_speed = 1
 
     button_Back_width, button_Back_height = 80, 28
     buttonb_x, buttonb_y = 200, 507
     buttonb_rect = pygame.Rect(buttonb_x, buttonb_y, button_Back_width, button_Back_height)
+
+    prepare_character_selection_assets()
 
     while True:
         delta_time = clock.tick(FPS)
@@ -210,14 +221,14 @@ def character_selection_screen():
 
         draw_character_selection(selected_fighter_1, selected_fighter_2)
 
-        draw_selected_image(screen, str(fighters[selected_fighter_1]['name']), SCREEN_WIDTH / 2 - 314, 236)
-        draw_selected_image(screen, str(fighters[selected_fighter_2]['name']), SCREEN_WIDTH / 2 + 186, 236)
+        draw_selected_image(screen, fighters[selected_fighter_1], SCREEN_WIDTH / 2 - 314, 236)
+        draw_selected_image(screen, fighters[selected_fighter_2], SCREEN_WIDTH / 2 + 186, 236)
 
         elapsed_time += delta_time
         frame_index, elapsed_time = update_frame_index(frame_index, elapsed_time, frame_duration)
 
-        draw_idle_animation(screen, str(fighters[selected_fighter_1]['name']), fighters[selected_fighter_1], SCREEN_WIDTH / 2 - 314, 236, frame_index)
-        draw_idle_animation(screen, str(fighters[selected_fighter_2]['name']), fighters[selected_fighter_2], SCREEN_WIDTH / 2 + 186, 236, frame_index)
+        draw_idle_animation(screen, fighters[selected_fighter_1], SCREEN_WIDTH / 2 - 314, 236, frame_index)
+        draw_idle_animation(screen, fighters[selected_fighter_2], SCREEN_WIDTH / 2 + 186, 236, frame_index)
 
         if current_time - max_last_blink_time >= MAX_BLINK_INTERVAL:
             max_text_visible = not max_text_visible
@@ -258,55 +269,26 @@ def character_selection_screen():
 #========================#
 def draw_bg(bg_type):
     if bg_type == 2:
-        scale_bg = pygame.transform.scale(bg_image_battle, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        screen.blit(scale_bg, (0, 0))
+        screen.blit(bg_image_battle, (0, 0))
     if bg_type == 1:
-        scale_bg = pygame.transform.scale(bg_image_start, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        screen.blit(scale_bg, (0, 0))
+        screen.blit(bg_image_start, (0, 0))
 
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
     text_rect = img.get_rect(center=(x, y))
     screen.blit(img, text_rect)
 
-def draw_selected_image(screen, character_name, x, y):
-    image = load_character_image(character_name)
-    if image:
-        screen.blit(image, (x, y))
+def prepare_character_selection_assets():
+    for fighter in fighters:
+        assets.fighter_image(fighter, "pick.png")
+        assets.idle_frames(fighter)
 
-def load_character_image(character_name):
-    try:
-        path = "assets\\images\\fighters\\" + character_name + "\\pick.png"
-        return pygame.image.load(path).convert_alpha()
-    except FileNotFoundError:
-        print(f"Img not found for {character_name}")
-        return None
+def draw_selected_image(screen, character, x, y):
+    screen.blit(assets.fighter_image(character, "pick.png"), (x, y))
 
-def load_character_spritesheet(character_name):
-    try:
-        path = "assets\\images\\fighters\\" + character_name + "\\spritesheet.png"
-        return pygame.image.load(path).convert_alpha()
-    except FileNotFoundError:
-        print("Spritesheet not found for " + character_name)
-        return None
-
-def extract_idle_frames(spritesheet, frame_width, steps):
-    frames = []
-    for i in range(steps):
-        frame = spritesheet.subsurface(
-            pygame.Rect(i * frame_width, 128 * 0, frame_width, spritesheet.get_height() / 10)
-        )
-        frames.append(frame)
-    return frames
-
-def draw_idle_animation(screen, characterName, character, x, y, frame_index):
-    spritesheet = load_character_spritesheet(characterName)
-    if not spritesheet:
-        return
-    idle_steps = character["animation_steps"][0]
-    frame_width = spritesheet.get_width() // (spritesheet.get_width() / 128)  # =128
-    idle_frames = extract_idle_frames(spritesheet, frame_width, idle_steps)
-    frame = idle_frames[frame_index % idle_steps]
+def draw_idle_animation(screen, character, x, y, frame_index):
+    idle_frames = assets.idle_frames(character)
+    frame = idle_frames[frame_index % len(idle_frames)]
     screen.blit(frame, (x, y))
 
 def update_frame_index(current_index, elapsed_time, frame_duration):
@@ -322,8 +304,7 @@ def draw_skulls(player, player_score, x, y):
         if player == 1:
             screen.blit(skull_icon, (x - i * (skull_icon.get_width() + 5), y))
         elif player == 2:
-            flipped_skull = pygame.transform.flip(skull_icon, True, False)
-            screen.blit(flipped_skull, (x + i * (flipped_skull.get_width() + 5), y))
+            screen.blit(flipped_skull_icon, (x + i * (flipped_skull_icon.get_width() + 5), y))
 
 def draw_timer(time_left):
     time_text = f"{int(time_left):02}"
@@ -372,16 +353,12 @@ def draw_max_energy_text(player, energy, x, y):
 #==#  Helpers (Match)  #==#
 #========================#
 def create_fighters(fighter_1_data, fighter_2_data):
-    player_1_sheet = pygame.image.load(
-        "assets\\images\\fighters\\" + fighter_1_data['name'] + "\\spritesheet.png"
-    ).convert_alpha()
-    player_2_sheet = pygame.image.load(
-        "assets\\images\\fighters\\" + fighter_2_data['name'] + "\\spritesheet.png"
-    ).convert_alpha()
+    player_1_animations = assets.fighter_animations(fighter_1_data)
+    player_2_animations = assets.fighter_animations(fighter_2_data)
 
-    fighter_1 = Player(1, 200, 310, False, fighter_1_data, player_1_sheet, fighter_1_data['animation_steps'])
-    fighter_2 = Player(2, 700, 310, True, fighter_2_data, player_2_sheet, fighter_2_data['animation_steps'])
-    return fighter_1, fighter_2, player_1_sheet, player_2_sheet
+    fighter_1 = Player(1, 200, 310, False, fighter_1_data, None, fighter_1_data['animation_steps'], player_1_animations)
+    fighter_2 = Player(2, 700, 310, True, fighter_2_data, None, fighter_2_data['animation_steps'], player_2_animations)
+    return fighter_1, fighter_2, player_1_animations, player_2_animations
 
 def reset_round():
     global round_start_time, round_over, intro_count, fight_displayed
@@ -413,7 +390,7 @@ if __name__ == "__main__":
         score = [0, 0]
         reset_round()
 
-        fighter_1, fighter_2, player_1_sheet, player_2_sheet = create_fighters(fighter_1_data, fighter_2_data)
+        fighter_1, fighter_2, player_1_animations, player_2_animations = create_fighters(fighter_1_data, fighter_2_data)
 
         #=====================#
         #==#  Battle Loop  #==#
@@ -513,8 +490,8 @@ if __name__ == "__main__":
 
                 if pygame.time.get_ticks() - round_over_time > ROUND_OVER_COOLDOWN and run:
                     reset_round()
-                    fighter_1 = Player(1, 200, 310, False, fighter_1_data, player_1_sheet, fighter_1_data['animation_steps'])
-                    fighter_2 = Player(2, 700, 310, True, fighter_2_data, player_2_sheet, fighter_2_data['animation_steps'])
+                    fighter_1 = Player(1, 200, 310, False, fighter_1_data, None, fighter_1_data['animation_steps'], player_1_animations)
+                    fighter_2 = Player(2, 700, 310, True, fighter_2_data, None, fighter_2_data['animation_steps'], player_2_animations)
 
             # Manage frozen/burned status color effect (keep original logic)
             if fighter_1.frozen or fighter_2.frozen or fighter_1.burned or fighter_2.burned:

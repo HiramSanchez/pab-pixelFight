@@ -27,3 +27,20 @@ def test_new_player_has_fresh_round_state():
     assert player.burn_ticks == 0
 
     pygame.quit()
+
+
+def test_player_can_reuse_preloaded_animations():
+    pygame.init()
+    data = {
+        "name": "Test",
+        "size": 1,
+        "scale": 1,
+        "offset": [0, 0],
+    }
+    animations = [[pygame.Surface((1, 1), pygame.SRCALPHA)] for _ in range(10)]
+
+    player = Player(1, 200, 310, False, data, None, [1] * 10, animations)
+
+    assert player.animation_list is animations
+
+    pygame.quit()

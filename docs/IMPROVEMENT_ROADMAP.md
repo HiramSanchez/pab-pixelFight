@@ -8,8 +8,8 @@ behavior changes are documented.
 
 **Status: completed locally (2026-07-26).** Requirements, compilation, 15
 focused tests, asset/spritesheet validation, and a headless startup/Quit smoke
-test are repeatable. A case-sensitive CI runner remains pending because the
-known path/case defects belong to Phase 2.
+test are repeatable. Phase 2 later added exact-case validation; an external
+case-sensitive CI runner remains pending.
 
 - **Objective:** Make setup and baseline verification repeatable without
   changing gameplay.
@@ -47,6 +47,12 @@ reset consistently. Victory intentionally continues returning to the menu.
 - **Size:** Medium.
 
 ## Phase 2 — Portability and resource loading
+
+**Status: completed locally (2026-07-26).** Runtime assets use source-anchored
+`pathlib` paths and exact case-sensitive fighter directory keys. Images, fonts,
+selector frames, battle animations, backgrounds, and skull transforms are
+cached/reused. Tests and smoke validation pass from both repository root and
+its parent directory. A visible cross-platform visual pass remains recommended.
 
 - **Objective:** Launch reliably from any working directory and remove repeated
   loading.
@@ -188,7 +194,6 @@ reset consistently. Victory intentionally continues returning to the menu.
 
 ## Recommended immediate next slice
 
-Begin Phase 2 as a separate change: source-root `pathlib` paths, explicit
-case-correct asset identifiers, and a selector cache. Add a case-sensitive CI
-job once the runtime can pass it. Do not combine those changes with status,
-scene, or Player refactors.
+Begin Phase 3 as a separate change: define and test ownership/timing rules for
+freeze, burn, and dash before changing their implementation. Do not combine
+status work with scene separation or the broader Player refactor.
