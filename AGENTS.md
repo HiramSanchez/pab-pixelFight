@@ -7,8 +7,8 @@ style. The project is intended to remain easy to understand while it is made
 more reliable, portable, and extensible in small steps.
 
 - Runtime: Python 3.13 and Pygame 2.6.1.
-- Entry point: `main.py` (the repository currently has no `src/` directory).
-- Fighter model: `player.py`.
+- Entry point: `src/pixel_fight/__main__.py`.
+- Fighter model: `src/pixel_fight/entities/player.py`.
 - Runtime resources: `assets/images/` and `assets/fonts/`.
 - Current design: one `Game` loop, three explicit scenes, Player-owned combat
   state, and cached resource/timed-effect boundaries.
@@ -17,48 +17,53 @@ more reliable, portable, and extensible in small steps.
 
 ### Screen and match flow
 
-1. `main.py` calls `Game().run()` and has no import-time Pygame side effects.
+1. `python -m pixel_fight` calls `Game().run()` through the package entry point
+   and has no import-time Pygame side effects.
 2. `Game` initializes/shuts down Pygame and owns the only clock, event pump,
    display update, active scene, and transition processing.
-3. `MenuScene` owns menu buttons and the controls overlay.
+3. `MenuScene` owns mouse/keyboard menu navigation and the controls overlay.
 4. `SelectionScene` owns both selections and cached previews; Enter requests
    battle with the two character dictionaries and Back requests menu.
 5. `BattleScene` owns match/round state, HUD, countdown, timer, Player creation,
-   status rendering, scoring, and a non-blocking result timer.
+   status rendering, scoring, pause/navigation controls, and a non-blocking
+   result timer.
 6. A completed best-of-five match explicitly transitions to the main menu.
 
 ### Module responsibilities and data flow
 
-`main.py` is only the executable entry point. `game.py` owns application
-lifecycle and builds a `GameContext` containing the screen, assets, fonts, and
-time source. It coordinates scenes but does not implement gameplay rules.
+`pixel_fight.__main__` is only the executable entry point.
+`pixel_fight.game` owns application lifecycle and builds a `GameContext`
+containing the screen, assets, fonts, and time source. It coordinates scenes
+but does not implement gameplay rules.
 
-`settings.py` contains window, color, timing, character constants, and the two
-immutable `ControlScheme` mappings.
+`pixel_fight.settings` contains window, color, timing, character constants, and
+the two immutable `ControlScheme` mappings.
 
-`scenes/` contains the minimal `Scene` transition contract plus menu,
-selection, and battle implementations. Scene fields replace the former
+`pixel_fight.scenes` contains the minimal `Scene` transition contract plus
+menu, selection, and battle implementations. Scene fields replace the former
 module-level UI/match globals.
 
-`player.py` defines `Player`: sprite slicing, configured input polling,
+`pixel_fight.entities.player` defines `Player`: sprite slicing, configured input polling,
 movement/gravity, blocking, attack activation/resolution, energy, animation
-state, and ownership of dash/freeze/burn instances. `combat/attack.py` defines
-immutable move data and hitbox/frame-window rules. Movement and animation
-orchestration delegate to small methods; no input branch depends on player
-number.
+state, and ownership of dash/freeze/burn instances.
+`pixel_fight.combat.attack` defines immutable move data and
+hitbox/frame-window rules. Movement and animation orchestration delegate to
+small methods; no input branch depends on player number.
 
-`round_rules.py` is deliberately independent from Pygame. It resolves KO,
-timeout, draws, score deltas, and the first-to-three match threshold. It does
-not own timers, rendering, Player mutation, or scenes.
+`pixel_fight.combat.round_rules` is deliberately independent from Pygame. It
+resolves KO, timeout, draws, score deltas, and the first-to-three match
+threshold. It does not own timers, rendering, Player mutation, or scenes.
 
-`asset_manager.py` resolves resources from the repository-local `assets/`
-directory, never from process CWD. It caches images, fonts, selector idle
-frames, scaled battle animations, and status overlays. Fixed background/skull
-transforms are created once during display setup.
+`pixel_fight.resources.asset_manager` resolves resources from the
+repository-local `assets/` directory, or PyInstaller's bundle root when frozen,
+never from process CWD. It caches images, fonts, selector idle frames, scaled
+battle animations, and status overlays. Fixed background/skull transforms are
+created once during display setup.
 
-`status_effect.py` contains Pygame-independent timed-effect records and the
-explicit burn/freeze tint precedence. `TimedEffect` is used for freeze and dash;
-`BurnEffect` calculates all due damage ticks from elapsed milliseconds.
+`pixel_fight.combat.status_effect` contains Pygame-independent timed-effect
+records and the explicit burn/freeze tint precedence. `TimedEffect` is used for
+freeze and dash; `BurnEffect` calculates all due damage ticks from elapsed
+milliseconds.
 
 `tests/conftest.py` provides lightweight Player construction and simulated
 pressed-key input for deterministic rule tests. The pytest suite is headless;
@@ -84,6 +89,10 @@ BattleScene reads those fields to render and score.
 | Normal attack 2 | `3` | `.` |
 | Special attack | `4` | `/` |
 | Start selected match | `Enter` | `Enter` |
+
+Menu choices use `Up/Down` or `W/S` and `Enter`. `Escape` leaves the selector.
+During battle, `Escape` or `P` pauses. The pause overlay supports resume,
+restart match (`R`), character selection (`S`), and main menu (`M`).
 
 Inputs during combat are polled with `pygame.key.get_pressed()`, so attack keys
 are hold-driven, not edge-triggered. Each Player receives a `ControlScheme`;
@@ -172,7 +181,7 @@ three round wins displays victory for two seconds and returns to the main menu.
 
 ## Character configuration
 
-Each dictionary in `settings.py:FIGHTERS` contains:
+Each dictionary in `pixel_fight.settings:FIGHTERS` contains:
 
 - `name`: display name.
 - `asset_dir`: exact case-sensitive runtime folder component.
@@ -217,40 +226,20 @@ assets/
 - `battleground.png` is exactly 1000×600. `scrolling.png` is 2000×601 and is
   tiled horizontally. `controls.png` is 900×500. `start.png` is loaded but its
   only drawing mode is not used by the current flow.
-- `assets/images/ss/` contains README screenshots, not runtime assets.
-- Do not infer asset licensing beyond the README links: no license files or
-  per-asset attribution records are present in the repository.
+- `docs/images/screenshots/` contains README screenshots, not runtime assets.
+- `THIRD_PARTY_NOTICES.md` is the authoritative provenance inventory. Do not
+  infer licenses for unresolved files; public binary release remains blocked
+  until each bundled asset is mapped to an exact source/license.
 
 ## Known issues
 
-The prioritized evidence and remediation details live in
-`docs/TECHNICAL_AUDIT.md`.
-
-### Functional bugs
-
-- No confirmed functional bug remains from Phases 0–6.
-
-### Performance
-
-- Normal movement, gravity, and attack cooldowns remain frame-based.
-
-### Architecture and maintainability
-
-- Combat state is a set of overlapping booleans, not an enforced state model.
-- Player still owns combat resolution and overlapping boolean action states;
-  further state-model changes are outside the completed combat-data phase.
-
-### Optional gameplay improvements (not confirmed bugs)
-
-- Fighter-to-fighter body collision, pause/rematch navigation, audio, and
-  configurable controls.
-- Decide explicit policies for timeout ties and simultaneous KO before changing
-  them.
+The remaining prioritized work and release blockers live in
+`docs/PENDING_WORK.md`.
 
 ## Development rules
 
 1. Do not change existing behavior without documenting the intended change.
-2. Keep the game executable after every phase.
+2. Keep the game executable after every change.
 3. Avoid mass refactors in one change; migrate one responsibility at a time.
 4. Separate bug fixes, refactors, and features into independently verifiable
    changes.
@@ -266,8 +255,9 @@ The prioritized evidence and remediation details live in
     patterns or abstractions with only one use.
 11. Add tests for combat, scoring, timers, and state logic that can run without
     opening a graphical window.
-12. Record important architecture decisions in `docs/` and keep
-    `docs/CURRENT_STATE.md` aligned with behavior.
+12. Record important architecture decisions in `docs/ARCHITECTURE.md`, keep
+    `docs/GAMEPLAY.md` aligned with behavior, and track remaining work only in
+    `docs/PENDING_WORK.md`.
 
 ## Validation commands
 
@@ -277,15 +267,15 @@ Run commands from the repository root.
 py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m pip install -r requirements-dev.txt
-python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py combat/__init__.py combat/attack.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/smoke_test.py
+python -m pip install -e ".[dev,build]"
+python -m compileall -q src scripts tests
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py
-python main.py
+python -m pixel_fight
 ```
 
 The smoke test uses SDL's dummy video/audio drivers and validates startup and
 Quit handling without opening a visible window. It does not replace a manual
-visual/input check.
+visual/input check. Windows packaging additionally uses
+`scripts/build_windows.ps1`; follow `docs/RELEASING.md`.

@@ -1,0 +1,2 @@
+"""Pixel Fight application package."""
+
