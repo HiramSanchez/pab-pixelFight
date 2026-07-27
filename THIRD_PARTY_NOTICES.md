@@ -32,7 +32,7 @@ not identify the exact downloaded work.
 
 ## Repository-created material
 
-Files under `assets/images/ss/` are project screenshots recorded in the Git
+Files under `docs/images/screenshots/` are project screenshots recorded in the Git
 history. `assets/images/backgrounds/controls.png` also contains project-specific
 control presentation, but its underlying visual components are not documented
 well enough to make a broader ownership claim.

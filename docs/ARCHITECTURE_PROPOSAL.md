@@ -1,203 +1,129 @@
-# Architecture Proposal
+# Architecture
 
-## Recommendation
+## Implemented structure
 
-Pixel Fight needs a small scene-based core, not a framework. The minimum useful
-target is one application loop, three scenes, a Player entity, centralized
-settings/character data, and a tiny asset cache. Combat/status modules should
-appear only when their logic is extracted and tested; they do not need engines,
-dependency injection containers, event buses, or generic entity-component
-systems.
+Pixel Fight uses a conventional `src` package without introducing a framework
+or unnecessary abstraction layers.
 
 ```text
-src/
-├── main.py
+src/pixel_fight/
+├── __init__.py
+├── __main__.py
 ├── game.py
 ├── settings.py
-├── scenes/
-│   ├── menu_scene.py
-│   ├── selection_scene.py
-│   └── battle_scene.py
-├── entities/
-│   └── player.py
 ├── combat/
 │   ├── attack.py
+│   ├── round_rules.py
 │   └── status_effect.py
+├── entities/
+│   └── player.py
 ├── resources/
 │   └── asset_manager.py
-└── ui/
-    └── hud.py
+└── scenes/
+    ├── base.py
+    ├── menu.py
+    ├── selection.py
+    └── battle.py
 ```
 
-This is a destination map, not a requirement to create every file immediately.
-A still smaller intermediate architecture is recommended:
+Repository-level concerns remain outside the runtime package:
 
-```text
-main.py
-game.py
-settings.py
-player.py
-scenes.py
-asset_manager.py
-```
-
-The Phase 2 baseline now uses this intermediate root-level `asset_manager.py`.
-It should move under `src/resources/` only during a later package migration;
-its cache and source-root path behavior should be preserved.
-
-Phase 3 similarly uses a root-level `status_effect.py` with Pygame-independent
-timed records. Move it under `combat/` only during package migration; Player
-should remain the owner of active instances.
-
-Phase 4 implements the intermediate `game.py`, `settings.py`, and `scenes/`
-layout. `main.py` is now a minimal entry point; Game owns the only event loop
-and GameContext supplies screen/assets/fonts/time. Battle result remains a
-sub-state rather than an unnecessary fourth scene.
-
-Phase 5 keeps `player.py` at the repository root while its internals stabilize.
-ControlScheme configuration now lives in `settings.py`; Player uses small
-input/physics/animation methods. Moving it to `entities/` should remain a later
-mechanical package change rather than being mixed with combat behavior.
-
-Split `scenes.py` and move into `src/` only when file size or packaging makes
-the benefit concrete.
+- `assets/` contains runtime images and fonts.
+- `docs/` contains architecture, audits, release guidance, and screenshots.
+- `scripts/` contains validation, smoke, and release helpers.
+- `packaging/windows/` contains the PyInstaller specification.
+- `tests/` separates unit, integration, and release validation.
+- `pyproject.toml` owns package metadata, dependencies, entry points, and
+  pytest configuration.
 
 ## Responsibilities
 
-### `main.py`
+### Entry point and application
 
-Keep it boring: construct `Game`, call `run()`, and return an exit code. Pygame
-initialization and shutdown should happen inside this executable path, never as
-import side effects.
+`pixel_fight.__main__` constructs `Game` and calls `run()`. Importing it has no
+Pygame initialization side effect.
 
-### `game.py`
+`pixel_fight.game` owns Pygame lifecycle, display, clock, one event loop,
+current scene, transitions, and `GameContext`. It does not implement combat
+rules.
 
-Own the display, clock, one event loop, current scene, and transitions. A scene
-can return a small enum/value such as `MENU`, `SELECT`, `BATTLE`, or `QUIT`.
-`Game` should not know attack rules.
-
-### `settings.py`
-
-Hold window/FPS/colors, asset-root calculation, and typed or validated character
-configuration. Preserve the current data shape initially, adding an explicit
-case-correct `asset_dir`. Avoid a configuration framework; dictionaries or
-small frozen dataclasses are enough.
+`pixel_fight.settings` owns window, timing, color, controls, fighter, and attack
+configuration. The current Python data structures remain intentionally small;
+there is no JSON/YAML configuration layer.
 
 ### Scenes
 
-- Menu owns buttons and its controls overlay.
-- Selection owns selected indices and preview timing, requesting cached
-  portraits/idle frames.
-- Battle owns match/round state, timer, scoring, two Players, HUD coordination,
-  and result timing. A result can remain a sub-state of Battle until it becomes
-  complex enough for its own scene.
+- `menu` owns mouse/keyboard menu navigation and the controls overlay.
+- `selection` owns selected fighters and cached previews.
+- `battle` owns match/round state, HUD rendering, pause, scoring, and Player
+  coordination.
+- `base` defines only the minimal scene/transition contract.
 
-Use a minimal interface such as `handle_event(event)`, `update(dt_ms)`, and
-`draw(surface)`. Do not build a generic scene graph.
+Battle result remains a sub-state rather than a separate scene.
 
-### `entities/player.py`
+### Entities and combat
 
-Own per-fighter position, primary action, stats, animation playback, and
-controlled mutations. Input mappings should be passed in; Player should not
-branch on player number. Gradually separate input intent, physics, combat
-request, and animation while keeping one class until a split demonstrably
-helps.
+`entities.player` owns per-fighter movement, stats, primary action, animation,
+attack activation/resolution, and active status instances. One Player class is
+used for both local players.
 
-### `combat/attack.py`
+`combat.attack` defines immutable move data and hitbox/active-frame helpers.
+`combat.round_rules` contains Pygame-independent round/scoring decisions.
+`combat.status_effect` contains timed effect records and tint ordering.
 
-Implemented in Phase 6 as a frozen attack definition plus small hitbox and
-active-window helpers. Character configuration supplies startup/active/recovery
-frames and Player retains the resolver and one-hit activation state; no combat
-inheritance hierarchy was introduced.
+### Resources
 
-### `combat/status_effect.py`
+`resources.asset_manager` resolves assets from the repository root during
+source execution and from PyInstaller's bundle root when frozen. It owns image,
+font, animation, and overlay caches. One instance belongs to `GameContext`; it
+is not a global singleton.
 
-Add when burn/freeze timing moves out of the battle loop. Keep a small enum/data
-record and pure update functions. Player can own its active effect collection;
-BattleScene can coordinate result implications. No inheritance hierarchy is
-needed for four effects.
-
-### `resources/asset_manager.py`
-
-Resolve paths from the source/project root and cache original images, scaled
-frames, fonts, and simple transforms. Fail fast with a path-specific error.
-Avoid a global singleton; one instance owned by `Game` and passed to scenes is
-enough.
-
-### `ui/hud.py`
-
-Extract only after BattleScene exists. It should draw health, energy, timer,
-names, and score from supplied values without mutating game state.
-
-## What to preserve
-
-- Pygame and the direct 2D loop.
-- Fixed-size pixel-art presentation until scaling is an explicit feature.
-- Simple character configuration and ten-row spritesheet convention.
-- A single Player class for both local players.
-- Direct, readable collision rectangles.
-- Existing assets, controls, timings, and balance as the refactor baseline.
-
-## What not to abstract
-
-- No ECS, service locator, command bus, repository layer, plugin system, network
-  protocol, physics engine, or general-purpose animation graph.
-- No base class for one concrete scene family beyond a small protocol, unless
-  type checking actually benefits.
-- No separate class for every attack/status before data and tests require it.
-- No JSON/YAML config merely to move four dictionaries out of Python.
-- No asset pipeline or atlas format conversion without a measured problem.
-
-## Incremental migration
-
-```mermaid
-flowchart LR
-    A[Current two modules] --> B[Pure path/config + asset cache]
-    B --> C[main function and Game shell]
-    C --> D[Move menu loop into MenuScene]
-    D --> E[Move selector into SelectionScene]
-    E --> F[Move battle loop into BattleScene]
-    F --> G[Extract round resolver and statuses]
-    G --> H[Refine Player and attack data]
-```
-
-1. **Characterize first.** Add asset/startup checks and pure tests for any
-   extracted scoring logic. Record visual/timing baselines.
-2. **Fix resource boundaries.** Introduce source-anchored paths and caching
-   while functions remain in `main.py`.
-3. **Create a real `main()`.** Move initialization/shutdown inside it. A small
-   `Game` object may initially call the existing loops, preserving behavior.
-4. **Migrate menu.** Give it event/update/draw methods; keep controls as an
-   overlay. The old outer flow can adapt its result temporarily.
-5. **Migrate selection.** Move selected indices/preview timing and use cache.
-6. **Migrate battle.** Move globals into BattleScene fields without changing
-   combat order. Replace blocking victory wait with a timed sub-state only in a
-   separately reviewed change.
-7. **Extract rules.** One pure round resolver first, then timed status updates.
-8. **Refactor Player.** Controls mapping and smaller methods, protected by
-   behavior tests.
-9. **Move into `src/`.** Do this after imports and asset roots are explicit, as
-   its own mechanical change with README/build updates.
-
-At every step, retain a runnable adapter/entry point and remove the old path only
-after the new path passes the same smoke and manual checks.
-
-## Minimal end-state data flow
+## Dependency direction
 
 ```mermaid
 flowchart TD
-    MAIN[main.py] --> GAME[Game: loop/display/clock]
-    GAME --> SCENE[Current Scene]
-    GAME --> ASSETS[AssetManager]
-    SCENE --> ASSETS
-    SCENE -->|intent + dt| PLAYER[Player]
-    BATTLE[BattleScene] --> PLAYER
-    BATTLE --> RULES[Round/status/attack rules]
-    PLAYER -->|public snapshot/events| BATTLE
-    BATTLE --> HUD[HUD draw helpers]
+    ENTRY[pixel_fight.__main__] --> GAME[pixel_fight.game]
+    GAME --> SCENES[pixel_fight.scenes]
+    GAME --> RES[pixel_fight.resources]
+    SCENES --> SETTINGS[pixel_fight.settings]
+    SCENES --> PLAYER[pixel_fight.entities.player]
+    SCENES --> RULES[pixel_fight.combat.round_rules]
+    PLAYER --> ATTACK[pixel_fight.combat.attack]
+    PLAYER --> EFFECTS[pixel_fight.combat.status_effect]
+    PLAYER --> SETTINGS
 ```
 
-The central principle is ownership: Game owns application lifecycle, a scene
-owns its screen/match state, Player owns per-fighter state, and pure combat
-rules decide mutations. That is enough structure for this project's likely
-growth without turning it into an enterprise application.
+Combat and resource modules never import scenes or Game. Game coordinates
+scenes but does not know attack/status implementation details.
+
+## Deliberate non-abstractions
+
+- No ECS, service locator, command bus, repository layer, event bus, or plugin
+  system.
+- No class hierarchy for attacks or effects.
+- No generic scene graph.
+- No separate scene for the battle result.
+- No JSON/YAML layer for four fighters.
+- No `ui/` package until HUD behavior has a genuine independent boundary.
+
+`entities/player.py` and `scenes/battle.py` remain the largest modules. Their
+size alone is not justification for splitting them during the package move.
+Any later extraction should be behavior-driven and independently tested.
+
+## Runtime and development entry points
+
+Install for source development:
+
+```powershell
+python -m pip install -e ".[dev]"
+```
+
+Run with either registered entry point:
+
+```powershell
+python -m pixel_fight
+pixel-fight
+```
+
+Windows packaging points PyInstaller at
+`src/pixel_fight/__main__.py` with `src/` on its analysis path.

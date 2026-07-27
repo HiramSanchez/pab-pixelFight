@@ -5,7 +5,7 @@ import pygame
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SETTINGS_FILE = PROJECT_ROOT / "settings.py"
+SETTINGS_FILE = PROJECT_ROOT / "src" / "pixel_fight" / "settings.py"
 
 REQUIRED_ASSETS = (
     "assets/fonts/HelvetiPixel.ttf",
@@ -31,7 +31,9 @@ def load_fighter_configuration():
             for target in node.targets
         ):
             return ast.literal_eval(node.value)
-    raise AssertionError("The FIGHTERS configuration was not found in settings.py")
+    raise AssertionError(
+        "The FIGHTERS configuration was not found in pixel_fight/settings.py"
+    )
 
 
 def validate_file(relative_path):

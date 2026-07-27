@@ -5,7 +5,13 @@ recorded here from the first packaged preview onward.
 
 ## [Unreleased]
 
-- No unreleased changes recorded.
+### Changed
+
+- Moved runtime code into the installable `src/pixel_fight` package.
+- Grouped combat, entity, resource, scene, test, screenshot, and Windows
+  packaging files by responsibility.
+- Consolidated dependency, package, entry-point, and pytest configuration in
+  `pyproject.toml`.
 
 ## [0.1.0] - 2026-07-26
 

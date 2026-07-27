@@ -6,10 +6,13 @@ rather than a desired design.
 
 ## Repository and runtime baseline
 
-- Runtime modules exist at repository root: `main.py`, `game.py`, `settings.py`,
-  `player.py`, `round_rules.py`, `asset_manager.py`, and `status_effect.py`.
-- `scenes/` contains a minimal transition contract plus menu, selection, and
-  battle scenes. There is still no `src/` package.
+- Runtime code lives under the installable `src/pixel_fight/` package.
+- `pixel_fight.scenes` contains the minimal transition contract plus menu,
+  selection, and battle scenes.
+- Combat rules/effects live in `pixel_fight.combat`, Player in
+  `pixel_fight.entities`, and resource loading in `pixel_fight.resources`.
+- `pyproject.toml` owns runtime, development, build, entry-point, package, and
+  pytest configuration.
 - Python 3.13.0 and Pygame 2.6.1 are the documented and locally validated
   versions.
 - The window is fixed at 1000×600 and the target loop rate is 60 FPS.
@@ -19,7 +22,7 @@ rather than a desired design.
 ## Distribution state
 
 `VERSION` and `CHANGELOG.md` establish the first packaged preview at 0.1.0.
-`PixelFight.spec` produces a Windows x64 onedir bundle containing the
+`packaging/windows/PixelFight.spec` produces a Windows x64 onedir bundle containing the
 executable, assets, fonts, README, changelog, and third-party notices.
 `scripts/build_windows.ps1` audits packaged assets by SHA-256, performs a
 dummy-SDL executable startup check, and creates
@@ -34,7 +37,7 @@ file-level provenance, and the project source has no chosen license.
 
 ```mermaid
 flowchart TD
-    A[Execute main.py] --> B[Game initializes Pygame, display, context, scenes]
+    A[Execute python -m pixel_fight] --> B[Game initializes Pygame, display, context, scenes]
     B --> C[MenuScene]
     C -->|Controls| D[Controls overlay in MenuScene]
     D -->|Back| C
@@ -54,10 +57,10 @@ flowchart TD
 
 ### Startup
 
-`main.py` only defines/calls `main()`. Constructing `Game` initializes Pygame,
-opens the fixed 1000×600 display, creates the clock/context/scenes, and enters
-MenuScene. Importing `main` does not initialize Pygame. `Game.run()` guarantees
-`pygame.quit()` in `finally`.
+`pixel_fight.__main__` only defines/calls `main()`. Constructing `Game`
+initializes Pygame, opens the fixed 1000×600 display, creates the
+clock/context/scenes, and enters MenuScene. Importing the entry module does not
+initialize Pygame. `Game.run()` guarantees `pygame.quit()` in `finally`.
 
 ### Main menu and controls
 
@@ -160,7 +163,8 @@ recreates both Players and resets every round timer/status.
 
 - If time expires, higher health receives one score point. Equal health sets
   `winner_name = "No One"` and awards no point.
-- A single pure resolver in `round_rules.py` handles both KO and timeout.
+- A single pure resolver in `pixel_fight.combat.round_rules` handles both KO
+  and timeout.
   Simultaneous KO is a draw and awards no point.
 - During `round_over`, the winner text is shown while Player animations/status
   processing continue.
@@ -289,15 +293,15 @@ and fragile.
 
 ```mermaid
 flowchart LR
-    MAIN[main.py] --> G[game.py / Game]
+    MAIN[pixel_fight.__main__] --> G[pixel_fight.game / Game]
     PYG[pygame] --> G
     G --> SC[active Scene]
     G --> CTX[GameContext]
-    PYG --> P[player.py / Player]
-    R[round_rules.py] --> B[BattleScene]
-    S[status_effect.py] --> P
+    PYG --> P[pixel_fight.entities.player / Player]
+    R[pixel_fight.combat.round_rules] --> B[BattleScene]
+    S[pixel_fight.combat.status_effect] --> P
     S --> B
-    A[assets and fonts] --> AM[asset_manager.py]
+    A[assets and fonts] --> AM[pixel_fight.resources.asset_manager]
     AM --> CTX
     CTX --> SC
     SEL[SelectionScene] -->|fighter payload| B
@@ -317,8 +321,8 @@ by pixel in the battle loop.
 
 Screen/fonts/assets/time are explicit `GameContext` dependencies. Menu,
 selection, and battle mutable state are instance fields reset by `enter()`;
-constants and fighter configuration live in `settings.py`. Game is the only
-owner of the clock, event queue, active scene, and display update.
+constants and fighter configuration live in `pixel_fight.settings`. Game is
+the only owner of the clock, event queue, active scene, and display update.
 
 ## Automated verification
 
@@ -335,8 +339,8 @@ and Quit check rather than part of the unit suite.
 
 The description, screenshots, Python version, and Pygame version generally
 match the repository. The original badge linked Python text to Oracle/Java and
-the run command referenced nonexistent `src/main.py`; those are documentation
-errors. The former blanket “free license” statement has been removed.
+the run command referenced nonexistent `src/main.py`; those were historical
+documentation errors. The former blanket “free license” statement has been removed.
 `THIRD_PARTY_NOTICES.md` verifies Pixel Times New Roman as public domain and
 records all other asset provenance as unresolved rather than assuming that a
 platform-level or general store license applies.

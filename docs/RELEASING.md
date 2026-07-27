@@ -23,7 +23,7 @@ From a clean checkout with Python 3.13:
 ```powershell
 py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements-dev.txt -r requirements-build.txt
+python -m pip install -e ".[dev,build]"
 python -m pytest
 python scripts/validate_assets.py
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_windows.ps1

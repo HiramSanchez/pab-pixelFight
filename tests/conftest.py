@@ -1,7 +1,7 @@
 import pygame
 import pytest
 
-from player import Player
+from pixel_fight.entities.player import Player
 
 
 class PressedKeys:

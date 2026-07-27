@@ -4,6 +4,17 @@ The phases below are deliberately incremental. Each phase should be delivered
 as one or more small changes; acceptance means the game remains runnable and
 behavior changes are documented.
 
+## Post-roadmap package organization
+
+**Status: completed (2026-07-27).** After the nine improvement phases,
+runtime modules moved mechanically into the installable `src/pixel_fight`
+package. Combat, entity, resource, and scene modules now have explicit package
+ownership; tests are grouped as unit, integration, and release checks;
+screenshots live under documentation; Windows packaging lives under
+`packaging/windows`; and `pyproject.toml` consolidates dependency, entry-point,
+package, and pytest configuration. Gameplay behavior was not intentionally
+changed.
+
 ## Phase 0 — Baseline and safety
 
 **Status: completed locally (2026-07-26).** Requirements, compilation, 15

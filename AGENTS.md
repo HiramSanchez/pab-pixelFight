@@ -7,8 +7,8 @@ style. The project is intended to remain easy to understand while it is made
 more reliable, portable, and extensible in small steps.
 
 - Runtime: Python 3.13 and Pygame 2.6.1.
-- Entry point: `main.py` (the repository currently has no `src/` directory).
-- Fighter model: `player.py`.
+- Entry point: `src/pixel_fight/__main__.py`.
+- Fighter model: `src/pixel_fight/entities/player.py`.
 - Runtime resources: `assets/images/` and `assets/fonts/`.
 - Current design: one `Game` loop, three explicit scenes, Player-owned combat
   state, and cached resource/timed-effect boundaries.
@@ -17,7 +17,8 @@ more reliable, portable, and extensible in small steps.
 
 ### Screen and match flow
 
-1. `main.py` calls `Game().run()` and has no import-time Pygame side effects.
+1. `python -m pixel_fight` calls `Game().run()` through the package entry point
+   and has no import-time Pygame side effects.
 2. `Game` initializes/shuts down Pygame and owns the only clock, event pump,
    display update, active scene, and transition processing.
 3. `MenuScene` owns mouse/keyboard menu navigation and the controls overlay.
@@ -30,37 +31,39 @@ more reliable, portable, and extensible in small steps.
 
 ### Module responsibilities and data flow
 
-`main.py` is only the executable entry point. `game.py` owns application
-lifecycle and builds a `GameContext` containing the screen, assets, fonts, and
-time source. It coordinates scenes but does not implement gameplay rules.
+`pixel_fight.__main__` is only the executable entry point.
+`pixel_fight.game` owns application lifecycle and builds a `GameContext`
+containing the screen, assets, fonts, and time source. It coordinates scenes
+but does not implement gameplay rules.
 
-`settings.py` contains window, color, timing, character constants, and the two
-immutable `ControlScheme` mappings.
+`pixel_fight.settings` contains window, color, timing, character constants, and
+the two immutable `ControlScheme` mappings.
 
-`scenes/` contains the minimal `Scene` transition contract plus menu,
-selection, and battle implementations. Scene fields replace the former
+`pixel_fight.scenes` contains the minimal `Scene` transition contract plus
+menu, selection, and battle implementations. Scene fields replace the former
 module-level UI/match globals.
 
-`player.py` defines `Player`: sprite slicing, configured input polling,
+`pixel_fight.entities.player` defines `Player`: sprite slicing, configured input polling,
 movement/gravity, blocking, attack activation/resolution, energy, animation
-state, and ownership of dash/freeze/burn instances. `combat/attack.py` defines
-immutable move data and hitbox/frame-window rules. Movement and animation
-orchestration delegate to small methods; no input branch depends on player
-number.
+state, and ownership of dash/freeze/burn instances.
+`pixel_fight.combat.attack` defines immutable move data and
+hitbox/frame-window rules. Movement and animation orchestration delegate to
+small methods; no input branch depends on player number.
 
-`round_rules.py` is deliberately independent from Pygame. It resolves KO,
-timeout, draws, score deltas, and the first-to-three match threshold. It does
-not own timers, rendering, Player mutation, or scenes.
+`pixel_fight.combat.round_rules` is deliberately independent from Pygame. It
+resolves KO, timeout, draws, score deltas, and the first-to-three match
+threshold. It does not own timers, rendering, Player mutation, or scenes.
 
-`asset_manager.py` resolves resources from the repository-local `assets/`
-directory, or PyInstaller's bundle root when frozen, never from process CWD. It
-caches images, fonts, selector idle frames, scaled battle animations, and
-status overlays. Fixed background/skull transforms are created once during
-display setup.
+`pixel_fight.resources.asset_manager` resolves resources from the
+repository-local `assets/` directory, or PyInstaller's bundle root when frozen,
+never from process CWD. It caches images, fonts, selector idle frames, scaled
+battle animations, and status overlays. Fixed background/skull transforms are
+created once during display setup.
 
-`status_effect.py` contains Pygame-independent timed-effect records and the
-explicit burn/freeze tint precedence. `TimedEffect` is used for freeze and dash;
-`BurnEffect` calculates all due damage ticks from elapsed milliseconds.
+`pixel_fight.combat.status_effect` contains Pygame-independent timed-effect
+records and the explicit burn/freeze tint precedence. `TimedEffect` is used for
+freeze and dash; `BurnEffect` calculates all due damage ticks from elapsed
+milliseconds.
 
 `tests/conftest.py` provides lightweight Player construction and simulated
 pressed-key input for deterministic rule tests. The pytest suite is headless;
@@ -178,7 +181,7 @@ three round wins displays victory for two seconds and returns to the main menu.
 
 ## Character configuration
 
-Each dictionary in `settings.py:FIGHTERS` contains:
+Each dictionary in `pixel_fight.settings:FIGHTERS` contains:
 
 - `name`: display name.
 - `asset_dir`: exact case-sensitive runtime folder component.
@@ -223,7 +226,7 @@ assets/
 - `battleground.png` is exactly 1000×600. `scrolling.png` is 2000×601 and is
   tiled horizontally. `controls.png` is 900×500. `start.png` is loaded but its
   only drawing mode is not used by the current flow.
-- `assets/images/ss/` contains README screenshots, not runtime assets.
+- `docs/images/screenshots/` contains README screenshots, not runtime assets.
 - `THIRD_PARTY_NOTICES.md` is the authoritative provenance inventory. Do not
   infer licenses for unresolved files; public binary release remains blocked
   until each bundled asset is mapped to an exact source/license.
@@ -283,13 +286,12 @@ Run commands from the repository root.
 py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m pip install -r requirements-dev.txt
-python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py combat/__init__.py combat/attack.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/validate_distribution.py scripts/smoke_test.py scripts/smoke_test_executable.py
+python -m pip install -e ".[dev,build]"
+python -m compileall -q src scripts tests
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py
-python main.py
+python -m pixel_fight
 ```
 
 The smoke test uses SDL's dummy video/audio drivers and validates startup and

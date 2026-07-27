@@ -18,15 +18,19 @@
 - Python 3.13.0  
 - Pygame library (2.6.1)
 
+Runtime code uses a conventional `src/pixel_fight` package. Combat, entities,
+resources, and scenes are separated by responsibility; project tooling and
+assets remain outside the runtime package.
+
 ## 🎞️ Screens 
 </br>
 <div>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/main.png" width=800>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/controls.png" width=397.5>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/selector.png" width=397.5>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight0.png" width=397.5>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight.png" width=397.5>
-<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/assets/images/ss/fight3.png" width=800>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/docs/images/screenshots/main.png" width=800>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/docs/images/screenshots/controls.png" width=397.5>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/docs/images/screenshots/selector.png" width=397.5>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/docs/images/screenshots/fight0.png" width=397.5>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/docs/images/screenshots/fight.png" width=397.5>
+<img src="https://github.com/HiramSanchez/pab-pixelFight/blob/main/docs/images/screenshots/fight3.png" width=800>
 </div>
 </br>
 
@@ -50,14 +54,14 @@ Python 3.13 is the supported runtime:
 ```powershell
 py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python main.py
+python -m pip install -e .
+python -m pixel_fight
 ```
 
 ### Packaged Windows build
 
 ```powershell
-python -m pip install -r requirements-dev.txt -r requirements-build.txt
+python -m pip install -e ".[dev,build]"
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_windows.ps1
 ```
 
@@ -87,8 +91,8 @@ blocked until the licensing items in
 ## ✅ Validation
 
 ```bash
-python -m pip install -r requirements-dev.txt
-python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py combat/__init__.py combat/attack.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/validate_distribution.py scripts/smoke_test.py scripts/smoke_test_executable.py
+python -m pip install -e ".[dev]"
+python -m compileall -q src scripts tests
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py

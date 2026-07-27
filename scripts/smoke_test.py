@@ -9,7 +9,7 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 import pygame
 
@@ -19,7 +19,7 @@ def main():
     pygame.time.set_timer(pygame.QUIT, 100, loops=1)
 
     try:
-        runpy.run_path(str(PROJECT_ROOT / "main.py"), run_name="__main__")
+        runpy.run_module("pixel_fight", run_name="__main__")
     except SystemExit as error:
         if error.code not in (None, 0):
             raise

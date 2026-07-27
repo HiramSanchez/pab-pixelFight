@@ -3,7 +3,7 @@ $ProjectRoot = Split-Path -Parent $PSScriptRoot
 
 Push-Location $ProjectRoot
 try {
-    python -m PyInstaller --noconfirm --clean PixelFight.spec
+    python -m PyInstaller --noconfirm --clean packaging/windows/PixelFight.spec
     if ($LASTEXITCODE -ne 0) {
         throw "PyInstaller build failed."
     }
