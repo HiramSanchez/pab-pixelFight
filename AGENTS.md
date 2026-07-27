@@ -53,9 +53,10 @@ timeout, draws, score deltas, and the first-to-three match threshold. It does
 not own timers, rendering, Player mutation, or scenes.
 
 `asset_manager.py` resolves resources from the repository-local `assets/`
-directory, never from process CWD. It caches images, fonts, selector idle
-frames, scaled battle animations, and status overlays. Fixed background/skull
-transforms are created once during display setup.
+directory, or PyInstaller's bundle root when frozen, never from process CWD. It
+caches images, fonts, selector idle frames, scaled battle animations, and
+status overlays. Fixed background/skull transforms are created once during
+display setup.
 
 `status_effect.py` contains Pygame-independent timed-effect records and the
 explicit burn/freeze tint precedence. `TimedEffect` is used for freeze and dash;
@@ -223,8 +224,9 @@ assets/
   tiled horizontally. `controls.png` is 900×500. `start.png` is loaded but its
   only drawing mode is not used by the current flow.
 - `assets/images/ss/` contains README screenshots, not runtime assets.
-- Do not infer asset licensing beyond the README links: no license files or
-  per-asset attribution records are present in the repository.
+- `THIRD_PARTY_NOTICES.md` is the authoritative provenance inventory. Do not
+  infer licenses for unresolved files; public binary release remains blocked
+  until each bundled asset is mapped to an exact source/license.
 
 ## Known issues
 
@@ -283,7 +285,7 @@ py -3.13 -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
-python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py combat/__init__.py combat/attack.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/smoke_test.py
+python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py combat/__init__.py combat/attack.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/validate_distribution.py scripts/smoke_test.py scripts/smoke_test_executable.py
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py
@@ -292,4 +294,5 @@ python main.py
 
 The smoke test uses SDL's dummy video/audio drivers and validates startup and
 Quit handling without opening a visible window. It does not replace a manual
-visual/input check.
+visual/input check. Windows packaging additionally uses
+`scripts/build_windows.ps1`; follow `docs/RELEASING.md`.

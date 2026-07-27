@@ -1,9 +1,14 @@
 from pathlib import Path
+import sys
 
 import pygame
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+def project_root():
+    return Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+
+
+PROJECT_ROOT = project_root()
 DEFAULT_ASSET_ROOT = PROJECT_ROOT / "assets"
 
 

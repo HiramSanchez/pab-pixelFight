@@ -11,7 +11,8 @@
 - **Local Multiplayer** ( 2 players on the same device )  
 - **Basic Combat Mechanics** (Attack, Block, State effects)  
 - **Health Bars**, **Energy Bars** and **Round Timer**  
-- **Character selection** 
+- **Character selection**
+- **Keyboard menu navigation and battle pause**
 
 ## 🛠️ Tech Used  
 - Python 3.13.0  
@@ -29,37 +30,50 @@
 </div>
 </br>
 
-## 📦 Assets Used  
-The game includes assets downloaded from the following sources, all under a **free license** :  
+## 📦 Assets Used
 
-- **[Craftpix](https://craftpix.net/)** : Assets used according to their **[free license](https://craftpix.net/file-licenses/)** .
-- **[Itch.io](https://itch.io/)** : Assets used following the licensing terms provided by the author.   
-- **[Eder Munizz](https://edermunizz.itch.io/)** : Assets used following the licensing terms provided by the author.  
+The repository historically names [CraftPix](https://craftpix.net/),
+[itch.io](https://itch.io/), and
+[Eder Munizz](https://edermunizz.itch.io/) as sources. Exact file-to-product
+provenance is incomplete, so the project does not currently claim that every
+bundled file has a verified redistribution license.
 
-Please refer to their respective licenses for more details.
+See [third-party asset notices](THIRD_PARTY_NOTICES.md) for the verified font
+license, unresolved provenance, and the public-release blocker.
 
 ## 🚀 Getting Started
 
-### Prerequisites  
-- Make sure you have Python installed.  
-- Install the runtime dependency by running:
-```bash
-  python -m pip install -r requirements.txt
-```
-### How to Run 
-1. Clone this repository:  
- ```bash
-   git clone https://github.com/HiramSanchez/pab-pixelFight.git
- ```
-2. Run the game:
- ```bash
-   python main.py
- ```
+### Run from source
 
-> **Current status:** Pixel Fight is playable, but its small legacy codebase is
-> now being modernized incrementally. The current behavior, known technical
-> risks, and planned architecture are documented before functional changes are
-> made.
+Python 3.13 is the supported runtime:
+
+```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python main.py
+```
+
+### Packaged Windows build
+
+```powershell
+python -m pip install -r requirements-dev.txt -r requirements-build.txt
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_windows.ps1
+```
+
+Extract `dist/PixelFight-windows-x64.zip`, then run `PixelFight.exe`. Python is
+not required on the destination machine. Public binary publication remains
+blocked until the licensing items in
+[the release guide](docs/RELEASING.md) are resolved.
+
+## ⌨️ Controls
+
+- Menu: `W/S` or `Up/Down`, then `Enter`.
+- Character selection: `W/S` for Player 1, `Up/Down` for Player 2, `Enter` to
+  fight, `Escape` to return.
+- Battle pause: `Escape` or `P`.
+- Pause menu: `R` restart, `S` selector, `M` main menu.
+- Combat controls are shown from the in-game Controls screen.
 
 ## 📚 Project Notes
 
@@ -67,16 +81,15 @@ Please refer to their respective licenses for more details.
 - [Technical audit](docs/TECHNICAL_AUDIT.md)
 - [Improvement roadmap](docs/IMPROVEMENT_ROADMAP.md)
 - [Architecture proposal](docs/ARCHITECTURE_PROPOSAL.md)
+- [Release process](docs/RELEASING.md)
+- [Changelog](CHANGELOG.md)
 
 ## ✅ Validation
 
 ```bash
 python -m pip install -r requirements-dev.txt
-python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py combat/__init__.py combat/attack.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/smoke_test.py
+python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py combat/__init__.py combat/attack.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/validate_distribution.py scripts/smoke_test.py scripts/smoke_test_executable.py
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py
 ```
-
-The game can be launched from the repository root with `python main.py`, or
-from another working directory by passing the path to `main.py`.

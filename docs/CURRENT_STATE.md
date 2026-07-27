@@ -9,12 +9,26 @@ rather than a desired design.
 - Runtime modules exist at repository root: `main.py`, `game.py`, `settings.py`,
   `player.py`, `round_rules.py`, `asset_manager.py`, and `status_effect.py`.
 - `scenes/` contains a minimal transition contract plus menu, selection, and
-  battle scenes. There is still no `src/` package or packaging metadata.
+  battle scenes. There is still no `src/` package.
 - Python 3.13.0 and Pygame 2.6.1 are the documented and locally validated
   versions.
 - The window is fixed at 1000×600 and the target loop rate is 60 FPS.
 - Asset loading is anchored to the repository-local `assets/` directory and is
-  independent of launch CWD.
+  independent of launch CWD. Frozen builds use PyInstaller's bundle root.
+
+## Distribution state
+
+`VERSION` and `CHANGELOG.md` establish the first packaged preview at 0.1.0.
+`PixelFight.spec` produces a Windows x64 onedir bundle containing the
+executable, assets, fonts, README, changelog, and third-party notices.
+`scripts/build_windows.ps1` audits packaged assets by SHA-256, performs a
+dummy-SDL executable startup check, and creates
+`dist/PixelFight-windows-x64.zip`. A GitHub Actions workflow repeats this on
+manual dispatch or version tags and uploads a workflow artifact.
+
+Windows is the only packaged target. A visible clean-machine pass remains
+manual. Public release is blocked because most art and HelvetiPixel lack exact
+file-level provenance, and the project source has no chosen license.
 
 ## Complete application flow
 
@@ -317,10 +331,12 @@ acceptance and cleanup, every configured combat move, and timed freeze, burn,
 and dash behavior. `scripts/smoke_test.py` remains a separate SDL-dummy startup
 and Quit check rather than part of the unit suite.
 
-## README accuracy at baseline
+## README and licensing accuracy
 
 The description, screenshots, Python version, and Pygame version generally
 match the repository. The original badge linked Python text to Oracle/Java and
 the run command referenced nonexistent `src/main.py`; those are documentation
-errors. Asset license claims cannot be fully validated from the repository
-because source-specific license files are absent.
+errors. The former blanket “free license” statement has been removed.
+`THIRD_PARTY_NOTICES.md` verifies Pixel Times New Roman as public domain and
+records all other asset provenance as unresolved rather than assuming that a
+platform-level or general store license applies.

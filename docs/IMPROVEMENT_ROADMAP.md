@@ -220,6 +220,14 @@ authorized audio assets or established volume policy.
 
 ## Phase 9 — Documentation and distribution
 
+**Status: implemented locally (2026-07-26); public release blocked.** Version
+0.1.0, changelog policy, Windows PyInstaller configuration, packaged-asset
+audit, executable smoke check, build ZIP, and a non-publishing GitHub Actions
+workflow are in place. The local Windows bundle builds and validates. Pixel
+Times New Roman is verified as public domain; most art, HelvetiPixel, and the
+project's source-code license remain unresolved. A clean-machine visual match
+and those owner-controlled license decisions are required before publishing.
+
 - **Objective:** Make the game installable, attributable, and releasable.
 - **Files:** README, licenses/attribution, changelog, build config, screenshots,
   release workflow.
@@ -238,6 +246,6 @@ authorized audio assets or established volume policy.
 
 ## Recommended immediate next slice
 
-Begin Phase 9 with asset provenance and release documentation before choosing a
-packaging tool. Keep audio contingent on authorized assets and an explicit
-license/volume decision.
+Resolve the Phase 9 release gate: choose a project source-code license, recover
+exact product/license records for every bundled asset, then run the documented
+clean Windows visual checklist before publishing version 0.1.0.

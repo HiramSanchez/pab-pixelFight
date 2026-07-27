@@ -451,6 +451,22 @@ Severity indicates impact on reliability or future change, not effort.
 - **Change risk:** Low.
 - **Dependencies:** PF-005.
 
+### PF-029 — Asset provenance and project license are incomplete
+
+- **Category / severity:** Distribution/legal / high
+- **Affected:** Bundled assets and repository-wide source
+- **Description:** Git history and README links do not map most files to exact
+  product pages or retained license terms; the project source has no license.
+- **Impact:** A technically valid executable can be built, but its public
+  redistribution rights are not established.
+- **Evidence:** Asset inventory, Git history, declared source pages, and absence
+  of local license/receipt records.
+- **Suggested solution:** Obtain exact source/license evidence per file and
+  have the owner choose a source-code license before publishing binaries.
+- **Change risk:** Low technically; legal choice requires owner authority.
+- **Dependencies:** None.
+- **Status:** Documented and enforced as a release gate in Phase 9.
+
 ## Architecture pressure summary
 
 The highest-risk cluster is not code style: match resolution, timed status

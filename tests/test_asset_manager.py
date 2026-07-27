@@ -3,6 +3,7 @@ from pathlib import Path
 import pygame
 import pytest
 
+import asset_manager
 from asset_manager import AssetManager, DEFAULT_ASSET_ROOT
 
 
@@ -30,6 +31,15 @@ def test_default_asset_root_is_anchored_to_project_not_cwd(monkeypatch, tmp_path
 
     assert manager.asset_root == DEFAULT_ASSET_ROOT.resolve()
     assert manager.path("images/icons/skull.png").is_file()
+
+
+def test_frozen_project_root_uses_pyinstaller_bundle_directory(
+    monkeypatch,
+    tmp_path,
+):
+    monkeypatch.setattr(asset_manager.sys, "_MEIPASS", str(tmp_path), raising=False)
+
+    assert asset_manager.project_root() == tmp_path
 
 
 def test_asset_path_cannot_escape_root():
