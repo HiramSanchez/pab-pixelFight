@@ -80,3 +80,19 @@ def test_idle_and_battle_frames_are_cached():
     assert first_animations is second_animations
     assert len(first_idle) == ONICHAN["animation_steps"][0]
     assert [len(row) for row in first_animations] == ONICHAN["animation_steps"]
+
+
+def test_status_overlays_are_cached_by_frame_color_and_direction():
+    manager = AssetManager()
+    image = pygame.Surface((2, 2), pygame.SRCALPHA)
+    image.set_at((0, 0), (255, 255, 255, 255))
+    color = (255, 0, 0, 50)
+
+    first = manager.status_overlay(image, color)
+    second = manager.status_overlay(image, color)
+    flipped = manager.status_overlay(image, color, flipped=True)
+
+    assert first is second
+    assert flipped is not first
+    assert first.get_at((0, 0)) == color
+    assert first.get_at((1, 1)).a == 0

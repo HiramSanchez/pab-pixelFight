@@ -1,4 +1,5 @@
 import pygame
+from status_effect import BurnEffect, TimedEffect
 
 class Player:
 
@@ -55,24 +56,46 @@ class Player:
         self.energy = 10
 
         # Spec Moves / Status
-        self.dashing = False
-        self.dash_speed = 20
-        self.dash_duration = 200
-        self.dash_start_time = 0
+        self.dash_effect = TimedEffect(duration_ms=200)
+        self.dash_speed = 1200
 
-        self.frozen = False
-        self.frozen_duration = 3000
-        self.freeze_start_time = 0
+        self.freeze_effect = TimedEffect(duration_ms=3000)
 
-        self.burned = False
-        self.burn_start_time = 0
-        self.burn_interval = 2000
-        self.burn_ticks = 0
+        self.burn_effect = BurnEffect(
+            interval_ms=2000,
+            max_ticks=3,
+            damage_per_tick=10,
+        )
 
         # Freeze visuals control (NEW)
         self._freeze_frame_locked = False
         self._locked_action = 0
         self._locked_frame_index = 0
+
+    @property
+    def dashing(self):
+        return self.dash_effect.active
+
+    @property
+    def frozen(self):
+        return self.freeze_effect.active
+
+    @property
+    def burned(self):
+        return self.burn_effect.active
+
+    @property
+    def burn_ticks(self):
+        return self.burn_effect.ticks_applied
+
+    def apply_freeze(self, now):
+        self.freeze_effect.start(now)
+
+    def apply_burn(self, now):
+        self.burn_effect.start(now)
+
+    def cancel_dash(self):
+        self.dash_effect.clear()
 
 
     #======================#
@@ -113,7 +136,15 @@ class Player:
     #==================#
     #==#  Movement  #==#
     #==================#
-    def move(self, screen_width, screen_height, surface, target, round_over):
+    def move(
+        self,
+        screen_width,
+        screen_height,
+        surface,
+        target,
+        round_over,
+        delta_time_ms=1000 / 60,
+    ):
         SPEED = 10
         GRAVITY = 2
         JUMP_HEIGHT = -30
@@ -182,10 +213,14 @@ class Player:
 
         # Spec Move: Dash (si ya está dashing, se mueve aunque no haya input)
         if self.dashing:
-            if pygame.time.get_ticks() - self.dash_start_time < self.dash_duration:
-                dx = self.dash_speed if not self.flip else -self.dash_speed
+            now = pygame.time.get_ticks()
+            dash_blocked = self.frozen or not self.alive or round_over
+            if dash_blocked:
+                self.cancel_dash()
+            elif not self.dash_effect.update(now):
+                dash_distance = self.dash_speed * (delta_time_ms / 1000)
+                dx = dash_distance if not self.flip else -dash_distance
             else:
-                self.dashing = False
                 self.attack_cooldown = 30
 
         # apply gravity
@@ -251,8 +286,12 @@ class Player:
     #===================#
     #==#  Animation  #==#
     #===================#
-    def update(self):
-        now = pygame.time.get_ticks()
+    def update(self, now=None, round_active=True):
+        if now is None:
+            now = pygame.time.get_ticks()
+
+        if round_active:
+            self.health -= self.burn_effect.update(now)
 
         # Clamp
         if self.energy >= 100:
@@ -266,11 +305,11 @@ class Player:
             self.alive = False
             self.update_action(9)  # death
 
-        # Freeze timing (mover aquí es más estable)
-        if self.frozen:
-            if now - self.freeze_start_time >= self.frozen_duration:
-                self.frozen = False
-                self._freeze_frame_locked = False  # libera frame lock
+        if self.freeze_effect.update(now):
+            self._freeze_frame_locked = False
+
+        if not round_active or not self.alive:
+            self.cancel_dash()
 
         # ===== Freeze animation lock (NEW) =====
         # Si está congelado:
@@ -347,8 +386,7 @@ class Player:
     def dash_attack(self, surface, target):
         if self.attack_cooldown == 0:
             self.attacking = True
-            self.dashing = True
-            self.dash_start_time = pygame.time.get_ticks()
+            self.dash_effect.start(pygame.time.get_ticks())
             self.energy -= 100
 
             attack_width = self.rect.width * 3.25
@@ -410,8 +448,7 @@ class Player:
             if attacking_rect.colliderect(target.rect):
                 if not target.blocking:
                     if self.fighter_name == "Onichan":
-                        target.frozen = True
-                        target.freeze_start_time = pygame.time.get_ticks()
+                        target.apply_freeze(pygame.time.get_ticks())
                         target.health -= damage
                         target.hit = True
 
@@ -421,9 +458,7 @@ class Player:
                         target.hit = True
 
                     elif self.fighter_name == "Raruto":
-                        target.burned = True
-                        target.burn_start_time = pygame.time.get_ticks()
-                        target.burn_ticks = 0
+                        target.apply_burn(pygame.time.get_ticks())
                         target.hit = True
 
 

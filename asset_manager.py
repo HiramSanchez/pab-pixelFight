@@ -14,6 +14,7 @@ class AssetManager:
         self._fonts = {}
         self._idle_frames = {}
         self._fighter_animations = {}
+        self._status_overlays = {}
 
     def path(self, relative_path):
         path = (self.asset_root / relative_path).resolve()
@@ -82,3 +83,15 @@ class AssetManager:
                 for action_index, frame_count in enumerate(fighter["animation_steps"])
             ]
         return self._fighter_animations[cache_key]
+
+    def status_overlay(self, image, color, flipped=False):
+        cache_key = (id(image), tuple(color), flipped)
+        if cache_key not in self._status_overlays:
+            overlay = pygame.mask.from_surface(image).to_surface(
+                setcolor=color,
+                unsetcolor=(0, 0, 0, 0),
+            )
+            if flipped:
+                overlay = pygame.transform.flip(overlay, True, False)
+            self._status_overlays[cache_key] = overlay
+        return self._status_overlays[cache_key]

@@ -7,7 +7,7 @@ than a desired design.
 ## Repository and runtime baseline
 
 - Runtime modules exist at repository root: `main.py`, `player.py`, the pure
-  `round_rules.py`, and `asset_manager.py`.
+  `round_rules.py`, `asset_manager.py`, and `status_effect.py`.
 - There is no `src/`, package metadata, or scene framework. Focused pytest
   coverage exists for round rules and fresh Player state.
 - Python 3.13.0 and Pygame 2.6.1 are the documented and locally validated
@@ -121,17 +121,17 @@ The battle loop does the following:
 3. draws scaled background and HUD;
 4. draws countdown/banner or, while time remains, calls `move()` for Player 1
    then Player 2;
-5. updates animations/death state and draws both players;
-6. applies burn ticks while the round is active;
-7. resolves KO/timeout/draw once and applies its score delta;
-8. handles result/victory and possibly recreates players;
-9. generates at most one freeze/burn tint overlay;
-10. handles only the window-close event;
-11. updates the display.
+5. updates each Player's effects, animations, and death state, then draws both;
+6. resolves KO/timeout/draw once and applies its score delta;
+7. handles result/victory and possibly recreates players;
+8. draws cached overlays for all active burn/freeze effects;
+9. handles only the window-close event;
+10. updates the display.
 
-The ordering matters: burn damage is applied before the outcome resolver, so a
-lethal tick ends the round in the same frame. Player 1 movement/attack is still
-processed before Player 2, which can affect same-frame interactions.
+The ordering matters: Player-owned burn damage is applied before the outcome
+resolver, so a lethal tick ends the round in the same frame. Player 1
+movement/attack is still processed before Player 2, which can affect same-frame
+interactions.
 
 ### KO, timeout, scoring, and victory
 
@@ -217,17 +217,22 @@ active.
 
 ### Freeze, burn, and dash
 
-Onichan freeze timestamps the target in `Player.freeze_attack()`.
+Onichan starts or refreshes the target's 3000 ms `TimedEffect`.
 `Player.update()` owns expiry and freezes the current frame (or the final hit
-frame). The main battle loop separately builds the blue overlay.
+frame).
 
-Raruto burn stores its timer and counters on the target, but `main.py` performs
-the three delayed damage ticks and red overlay. Burn stops processing once the
-round is over.
+Raruto starts or refreshes the target's `BurnEffect`. Player applies every tick
+due at 2, 4, and 6 seconds, including multiple overdue ticks after a slow frame.
+It applies no damage after round end.
 
-Bam dash marks both `attacking` and `dashing`, spends energy, and checks a
-3.25-body-width hitbox once. Movement then overrides horizontal `dx` for 200 ms.
-It does not check collision during travel.
+Bam starts a 200 ms `TimedEffect`, spends energy, and checks a
+3.25-body-width hitbox once. Movement uses 1200 px/s and frame delta, preserving
+20 px/frame at 60 FPS. Freeze, death, and round end cancel travel. Collision is
+still not checked during travel.
+
+Burn and freeze are orthogonal and may coexist. The battle renderer loops over
+both players, drawing burn first and freeze second. `AssetManager` caches mask
+surfaces by source frame, tint color, and flip direction.
 
 ## Animation and asset management
 
@@ -239,10 +244,10 @@ a compatibility fallback for direct construction and tests. Battle animation
 advances at 50 ms per frame using elapsed milliseconds; it advances at most one
 frame per call and does not carry extra elapsed time.
 
-The status overlay creates a mask from `Player.image`, allocates a transparent
-surface of the full scaled cell, and loops over every pixel every battle frame.
-The configured `freeze_offset` is separate from the normal scaled sprite offset,
-which makes alignment character-specific and fragile.
+The first request for a source frame/color/orientation creates a mask overlay;
+`AssetManager` reuses it afterward. The configured `freeze_offset` is separate
+from the normal scaled sprite offset, which makes alignment character-specific
+and fragile.
 
 ## Global state and module dependencies
 
@@ -251,13 +256,15 @@ flowchart LR
     PYG[pygame] --> M[main.py]
     PYG --> P[player.py / Player]
     R[round_rules.py] --> M
+    S[status_effect.py] --> P
+    S --> M
     A[assets and fonts] --> AM[asset_manager.py]
     AM --> M
     M -->|character data, spritesheet, player number| P
-    M -->|round_over, opponent, display bounds| P
+    M -->|character config and display bounds| P
     P -->|mutates health, status, energy| P
     P -->|public fields read each frame| M
-    M -->|burn ticks and status overlay| P
+    M -->|round state, opponent, frame delta| P
     M -->|health and timeout| R
     R -->|round result and score delta| M
 ```
@@ -265,7 +272,8 @@ flowchart LR
 `AssetManager` uses a `Path` rooted beside its module and caches by resolved
 path/configuration. Fighter display names are separate from exact directory
 keys, so `Onichan` maps to `onichan` and `Bam` maps to `bam` on case-sensitive
-filesystems.
+filesystems. Status overlay masks are also cached rather than generated pixel
+by pixel in the battle loop.
 
 Functions in `main.py` depend implicitly on module globals including `screen`,
 fonts, colors, `clock`, fighter configuration, loaded images, timer constants,

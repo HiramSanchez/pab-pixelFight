@@ -3,6 +3,7 @@ import time
 from asset_manager import AssetManager
 from player import Player
 from round_rules import apply_score, match_winner, resolve_round
+from status_effect import active_tints
 
 #============================#
 #==#  Create game window  #==#
@@ -349,6 +350,17 @@ def draw_max_energy_text(player, energy, x, y):
             elif player == 2:
                 draw_text("MAX", score_font, CYAN, x - 40, y + 10)
 
+def draw_status_effects(fighter, fighter_data):
+    for color in active_tints(fighter.burned, fighter.frozen):
+        overlay = assets.status_overlay(fighter.image, color, fighter.flip)
+        screen.blit(
+            overlay,
+            (
+                fighter.rect.x + fighter_data["freeze_offset"][0],
+                fighter.rect.y + fighter_data["freeze_offset"][1],
+            ),
+        )
+
 #========================#
 #==#  Helpers (Match)  #==#
 #========================#
@@ -398,7 +410,7 @@ if __name__ == "__main__":
         run = True
         while run:
 
-            clock.tick(FPS)
+            delta_time = clock.tick(FPS)
 
             # Draw & Update timer
             elapsed_time = pygame.time.get_ticks() - round_start_time
@@ -432,31 +444,15 @@ if __name__ == "__main__":
                 draw_text(FIGHT_TEXT, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 180)
 
             elif time_left > 0:
-                fighter_1.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_2, round_over)
-                fighter_2.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_1, round_over)
+                fighter_1.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_2, round_over, delta_time)
+                fighter_2.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_1, round_over, delta_time)
 
             # Update & Draw fighters
-            fighter_1.update()
-            fighter_2.update()
+            current_time = pygame.time.get_ticks()
+            fighter_1.update(current_time, round_active=not round_over)
+            fighter_2.update(current_time, round_active=not round_over)
             fighter_1.draw(screen)
             fighter_2.draw(screen)
-
-            # Manage burn damage before resolving the round
-            if not round_over and (fighter_1.burned or fighter_2.burned):
-                if fighter_1.burned:
-                    current_time = pygame.time.get_ticks()
-                    if current_time - fighter_1.burn_start_time >= (fighter_1.burn_interval * (fighter_1.burn_ticks + 1)):
-                        fighter_1.health -= 10
-                        fighter_1.burn_ticks += 1
-                        if fighter_1.burn_ticks >= 3:
-                            fighter_1.burned = False
-                if fighter_2.burned:
-                    current_time = pygame.time.get_ticks()
-                    if current_time - fighter_2.burn_start_time >= (fighter_2.burn_interval * (fighter_2.burn_ticks + 1)):
-                        fighter_2.health -= 10
-                        fighter_2.burn_ticks += 1
-                        if fighter_2.burn_ticks >= 3:
-                            fighter_2.burned = False
 
             # Resolve KO and timeout through one symmetric rule
             if not round_over:
@@ -493,40 +489,8 @@ if __name__ == "__main__":
                     fighter_1 = Player(1, 200, 310, False, fighter_1_data, None, fighter_1_data['animation_steps'], player_1_animations)
                     fighter_2 = Player(2, 700, 310, True, fighter_2_data, None, fighter_2_data['animation_steps'], player_2_animations)
 
-            # Manage frozen/burned status color effect (keep original logic)
-            if fighter_1.frozen or fighter_2.frozen or fighter_1.burned or fighter_2.burned:
-                if fighter_1.frozen:
-                    frozenChar = fighter_1
-                    frozenOffset = fighter_1_data['freeze_offset']
-                    colorEffect = 0
-                elif fighter_2.frozen:
-                    frozenChar = fighter_2
-                    frozenOffset = fighter_2_data['freeze_offset']
-                    colorEffect = 0
-                elif fighter_1.burned:
-                    frozenChar = fighter_1
-                    frozenOffset = fighter_1_data['freeze_offset']
-                    colorEffect = 1
-                elif fighter_2.burned:
-                    frozenChar = fighter_2
-                    frozenOffset = fighter_2_data['freeze_offset']
-                    colorEffect = 1
-
-                enemy_mask = pygame.mask.from_surface(frozenChar.image)
-                blue_effect = pygame.Surface(frozenChar.image.get_size(), pygame.SRCALPHA)
-                for x in range(blue_effect.get_width()):
-                    for y in range(blue_effect.get_height()):
-                        if enemy_mask.get_at((x, y)):
-                            if colorEffect == 0:
-                                blue_effect.set_at((x, y), (15, 158, 234, 50))
-                            if colorEffect == 1:
-                                blue_effect.set_at((x, y), (255, 0, 0, 50))
-
-                if frozenChar.flip:
-                    flipped_blue_effect = pygame.transform.flip(blue_effect, True, False)
-                    screen.blit(flipped_blue_effect, (frozenChar.rect.x + frozenOffset[0], frozenChar.rect.y + frozenOffset[1]))
-                else:
-                    screen.blit(blue_effect, (frozenChar.rect.x + frozenOffset[0], frozenChar.rect.y + frozenOffset[1]))
+            draw_status_effects(fighter_1, fighter_1_data)
+            draw_status_effects(fighter_2, fighter_2_data)
 
             # Event handler
             for event in pygame.event.get():

@@ -26,9 +26,9 @@ more reliable, portable, and extensible in small steps.
 4. `create_fighters()` reuses cached, scaled animation lists and creates two
    `Player` instances.
 5. The battle loop in the `if __name__ == "__main__"` block owns the HUD,
-   countdown, timer, status-effect processing/rendering, round recreation,
-   victory display, and events. It delegates round outcome and score rules to
-   `round_rules.py`.
+   countdown, timer, status-effect rendering, round recreation, victory
+   display, and events. It delegates round outcome/score rules to
+   `round_rules.py`; each Player updates its own timed effects.
 6. A completed best-of-five match returns to the main menu.
 
 There is no scene manager. Menu, selection, and battle are nested `while`
@@ -37,13 +37,12 @@ loops. Only the outermost loop coordinates transitions.
 ### Module responsibilities and data flow
 
 `main.py` currently handles application startup, display and fonts, character
-configuration, all scenes, selection previews, asset paths, match creation,
-round timing/scoring, HUD, burn ticking, freeze/burn overlays, and shutdown.
+configuration, all scenes, selection previews, match creation, round
+timing/scoring, HUD, status-overlay placement, and shutdown.
 
 `player.py` defines `Player`: sprite slicing, animation selection, input
 polling, movement/gravity, blocking, attack hitboxes and immediate damage,
-energy, dash, freeze timing, and most combat flags. Burn is stored on `Player`
-but advanced by `main.py`.
+energy, and ownership of dash/freeze/burn instances.
 
 `round_rules.py` is deliberately independent from Pygame. It resolves KO,
 timeout, draws, score deltas, and the first-to-three match threshold. It does
@@ -51,8 +50,12 @@ not own timers, rendering, Player mutation, or scenes.
 
 `asset_manager.py` resolves resources from the repository-local `assets/`
 directory, never from process CWD. It caches images, fonts, selector idle
-frames, and scaled battle animations. Fixed background/skull transforms are
-created once during display setup.
+frames, scaled battle animations, and status overlays. Fixed background/skull
+transforms are created once during display setup.
+
+`status_effect.py` contains Pygame-independent timed-effect records and the
+explicit burn/freeze tint precedence. `TimedEffect` is used for freeze and dash;
+`BurnEffect` calculates all due damage ticks from elapsed milliseconds.
 
 Character dictionaries and loaded spritesheets flow from `main.py` into each
 `Player`. Every frame, `main.py` passes the opponent and the global
@@ -81,9 +84,10 @@ are hold-driven, not edge-triggered.
 ### Player state
 
 Important fields are `alive`, `attacking`, `attack_type`, `attack_cooldown`,
-`blocking`, `hit`, `jump`, `running`, `dashing`, `frozen`, and `burned`.
-These booleans are not a strict finite-state machine and some combinations can
-coexist. Animation precedence is: dead → blocking → hit → attacking → jumping
+`blocking`, `hit`, `jump`, `running`, plus `dash_effect`, `freeze_effect`, and
+`burn_effect`. Read-only compatibility properties expose `dashing`, `frozen`,
+`burned`, and `burn_ticks`. The primary booleans are not a strict finite-state
+machine. Animation precedence is: dead → blocking → hit → attacking → jumping
 → running → idle. Freeze bypasses normal animation progression and locks a
 frame until its timer expires.
 
@@ -131,19 +135,20 @@ Index 1 is loaded but never selected by the current code.
 ### Character specials and statuses
 
 - **Raruto:** applies burn on an unblocked special hit. Burn deals 10 damage at
-  2, 4, and 6 seconds (30 total); there is no immediate special damage.
+  2, 4, and 6 seconds (30 total); delayed frames catch up every due tick and
+  reapplying burn restarts the schedule. There is no immediate special damage
+  and no burn damage after round end.
 - **Starlight:** deals 20 and heals 15 on an unblocked special hit; healing is
   clamped to 100 in the next `update()`.
 - **Onichan:** deals 15 and freezes for 3000 ms. Frozen players receive no
   normal input, keep gravity/screen bounds, and have their animation frame
-  locked. Freeze timing is owned by `Player.update()`.
-- **Bam:** begins a 200 ms dash at 20 px per battle frame and deals 35 only if
-  the special's initial hitbox overlaps at activation. Dash motion continues
-  outside the normal input gate, including while the round is over or the
-  player is frozen.
-- Freeze and burn tint generation is owned by `main.py`, rebuilt pixel by pixel
-  each frame. An `elif` chain displays only one affected fighter when several
-  statuses are active.
+  locked. Reapplying freeze restarts its duration.
+- **Bam:** begins a 200 ms dash at 1200 px/s (equivalent to 20 px/frame at
+  60 FPS) and deals 35 only if the initial hitbox overlaps. Dash cancels on
+  freeze, death, or round end.
+- Burn and freeze may coexist. Both players render their active effects; burn
+  tint is drawn first and freeze tint second. Overlays are cached by animation
+  frame, color, and orientation.
 
 ### Rounds and match victory
 
@@ -209,18 +214,18 @@ The prioritized evidence and remediation details live in
 
 ### Functional bugs
 
-- Bam's dash can move while frozen or after round end and only hits at startup.
+- Bam's dash still checks damage only at startup rather than during travel.
 - Importing `main` shuts down Pygame because final `pygame.quit()` is outside
   the main guard.
 
 ### Performance
 
-- Freeze/burn masks and tint surfaces are rebuilt with nested per-pixel loops.
+- Normal movement, gravity, and attack cooldowns remain frame-based.
 
 ### Architecture and maintainability
 
 - Global setup/state, nested loops, and scene rendering are concentrated in
-  `main.py`; burn behavior is split between modules.
+  `main.py`.
 - Player 1/2 input branches and status branches duplicate logic.
 - Combat state is a set of overlapping booleans, not an enforced state model.
 - Test coverage currently focuses on round rules and fresh Player state; most
@@ -269,7 +274,7 @@ py -3.13 -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
-python -m py_compile main.py player.py round_rules.py asset_manager.py scripts/validate_assets.py scripts/smoke_test.py
+python -m py_compile main.py player.py round_rules.py asset_manager.py status_effect.py scripts/validate_assets.py scripts/smoke_test.py
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py

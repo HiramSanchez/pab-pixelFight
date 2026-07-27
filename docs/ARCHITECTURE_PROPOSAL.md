@@ -45,6 +45,10 @@ The Phase 2 baseline now uses this intermediate root-level `asset_manager.py`.
 It should move under `src/resources/` only during a later package migration;
 its cache and source-root path behavior should be preserved.
 
+Phase 3 similarly uses a root-level `status_effect.py` with Pygame-independent
+timed records. Move it under `combat/` only during package migration; Player
+should remain the owner of active instances.
+
 Split `scenes.py` and move into `src/` only when file size or packaging makes
 the benefit concrete.
 

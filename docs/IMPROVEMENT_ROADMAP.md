@@ -72,6 +72,12 @@ its parent directory. A visible cross-platform visual pass remains recommended.
 
 ## Phase 3 — States and effects
 
+**Status: completed (2026-07-26).** Player owns timed freeze, burn, and dash
+records. Burn catches up overdue ticks and stops at round end; dash uses elapsed
+time and cancels on freeze/death/result; both players can render coexisting
+cached overlays. Tests cover durations, refresh, lag, lethal burn,
+coexistence, cancellation, and 30/60/120 FPS dash distances.
+
 - **Objective:** Give freeze, burn, and dash one clear update/render owner and
   stable timing.
 - **Files:** `player.py`, battle loop, optionally
@@ -194,6 +200,6 @@ its parent directory. A visible cross-platform visual pass remains recommended.
 
 ## Recommended immediate next slice
 
-Begin Phase 3 as a separate change: define and test ownership/timing rules for
-freeze, burn, and dash before changing their implementation. Do not combine
-status work with scene separation or the broader Player refactor.
+Begin Phase 4 as a separate change by introducing one application event loop
+and migrating screens incrementally. Preserve the tested round/effect rules and
+do not combine scene migration with the broader Player refactor.

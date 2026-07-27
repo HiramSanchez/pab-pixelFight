@@ -118,6 +118,8 @@ Severity indicates impact on reliability or future change, not effort.
   conversion once when image/action/frame changes.
 - **Change risk:** Medium; alpha and overlay alignment must be visually checked.
 - **Dependencies:** Unified status rendering and sprite cache.
+- **Status:** Resolved in Phase 3. Mask overlays are cached per source
+  frame/color/orientation and no Python per-pixel loop remains.
 
 ### PF-008 — Only one status overlay can render
 
@@ -132,6 +134,8 @@ Severity indicates impact on reliability or future change, not effort.
   define precedence when one Player has multiple effects.
 - **Change risk:** Medium; simultaneous-effect appearance needs a decision.
 - **Dependencies:** PF-007 and status ownership work.
+- **Status:** Resolved in Phase 3. Both effects render for both players; burn is
+  drawn before freeze when they coexist on one Player.
 
 ### PF-009 — Burn is split across modules and continues after KO
 
@@ -146,9 +150,8 @@ Severity indicates impact on reliability or future change, not effort.
   ticking after round end, and clamp/apply KO in one resolver.
 - **Change risk:** High because order affects match outcomes.
 - **Dependencies:** PF-012, status model, round resolver.
-- **Status:** Partially resolved in Phase 1. Burn now ticks only during an
-  active round and lethal damage is resolved in the same frame. Ownership
-  remains split until Phase 3.
+- **Status:** Resolved in Phase 3. Player owns burn scheduling/damage and
+  catches up overdue ticks; no post-round damage is applied.
 
 ### PF-010 — Dash motion ignores freeze and round-over gates
 
@@ -163,6 +166,7 @@ Severity indicates impact on reliability or future change, not effort.
   movement accordingly.
 - **Change risk:** Medium; changes special feel and timing.
 - **Dependencies:** Explicit state compatibility and dash tests.
+- **Status:** Resolved in Phase 3. Freeze, death, and round end cancel dash.
 
 ### PF-011 — Dash hitbox only checks at activation
 
@@ -262,6 +266,8 @@ Severity indicates impact on reliability or future change, not effort.
   delta-time movement, one subsystem at a time with baseline measurements.
 - **Change risk:** High; physics feel and balance can shift.
 - **Dependencies:** Stable loop and regression scenarios.
+- **Status:** Partially resolved in Phase 3. Dash now uses elapsed time and
+  px/s; normal movement, gravity, and attack cooldown remain frame-based.
 
 ### PF-018 — Damage is applied at animation start
 
@@ -305,6 +311,9 @@ Severity indicates impact on reliability or future change, not effort.
   timed effects and explicit transition/cancellation rules.
 - **Change risk:** High; migrate with tests rather than replacing all flags.
 - **Dependencies:** PF-009, PF-010, PF-016.
+- **Status:** Partially resolved in Phase 3. Timed records replace freeze, burn,
+  and dash booleans, and dash cancellation rules are explicit. Primary
+  combat/action flags still require the later Player refactor.
 
 ### PF-021 — Strict `energy == 100` issue is not present
 
