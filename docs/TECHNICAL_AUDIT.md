@@ -246,6 +246,8 @@ Severity indicates impact on reliability or future change, not effort.
   share one input path.
 - **Change risk:** Medium; held-key semantics must remain unchanged initially.
 - **Dependencies:** Input tests; optionally edge-trigger redesign later.
+- **Status:** Resolved in Phase 5. Immutable control mappings drive one shared
+  input path; parity tests cover P1/P2 movement, jump, block, and attack keys.
 
 ### PF-016 — Attacks are triggered by held keys
 
@@ -320,7 +322,9 @@ Severity indicates impact on reliability or future change, not effort.
 - **Dependencies:** PF-009, PF-010, PF-016.
 - **Status:** Partially resolved in Phase 3. Timed records replace freeze, burn,
   and dash booleans, and dash cancellation rules are explicit. Primary
-  combat/action flags still require the later Player refactor.
+  combat/action flags remain, but Phase 5 isolated their animation precedence
+  and cleanup in named methods/constants. A strict action-state model remains
+  optional future work.
 
 ### PF-021 — Strict `energy == 100` issue is not present
 

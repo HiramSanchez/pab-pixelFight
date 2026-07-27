@@ -33,15 +33,18 @@ more reliable, portable, and extensible in small steps.
 lifecycle and builds a `GameContext` containing the screen, assets, fonts, and
 time source. It coordinates scenes but does not implement gameplay rules.
 
-`settings.py` contains window, color, timing, and character constants.
+`settings.py` contains window, color, timing, character constants, and the two
+immutable `ControlScheme` mappings.
 
 `scenes/` contains the minimal `Scene` transition contract plus menu,
 selection, and battle implementations. Scene fields replace the former
 module-level UI/match globals.
 
-`player.py` defines `Player`: sprite slicing, animation selection, input
-polling, movement/gravity, blocking, attack hitboxes and immediate damage,
-energy, and ownership of dash/freeze/burn instances.
+`player.py` defines `Player`: sprite slicing, configured input polling,
+movement/gravity, blocking, attack hitboxes and immediate damage, energy,
+animation state, and ownership of dash/freeze/burn instances. Movement and
+animation orchestration delegate to small methods; no input branch depends on
+player number.
 
 `round_rules.py` is deliberately independent from Pygame. It resolves KO,
 timeout, draws, score deltas, and the first-to-three match threshold. It does
@@ -78,17 +81,18 @@ BattleScene reads those fields to render and score.
 | Start selected match | `Enter` | `Enter` |
 
 Inputs during combat are polled with `pygame.key.get_pressed()`, so attack keys
-are hold-driven, not edge-triggered.
+are hold-driven, not edge-triggered. Each Player receives a `ControlScheme`;
+the default is selected from `settings.PLAYER_CONTROLS` by player number.
 
 ### Player state
 
 Important fields are `alive`, `attacking`, `attack_type`, `attack_cooldown`,
 `blocking`, `hit`, `jump`, `running`, plus `dash_effect`, `freeze_effect`, and
 `burn_effect`. Read-only compatibility properties expose `dashing`, `frozen`,
-`burned`, and `burn_ticks`. The primary booleans are not a strict finite-state
-machine. Animation precedence is: dead → blocking → hit → attacking → jumping
-→ running → idle. Freeze bypasses normal animation progression and locks a
-frame until its timer expires.
+`burned`, and `burn_ticks`. Named action/attack constants replace magic row/type
+numbers. `select_animation_action()` preserves precedence: dead → blocking →
+hit → attacking → jumping → running → idle. Freeze remains orthogonal and
+locks a frame until its timer expires.
 
 ### Animation row indices
 
@@ -221,10 +225,9 @@ The prioritized evidence and remediation details live in
 
 ### Architecture and maintainability
 
-- Player 1/2 input branches and status branches duplicate logic.
 - Combat state is a set of overlapping booleans, not an enforced state model.
-- Test coverage currently focuses on round rules and fresh Player state; most
-  Pygame-coupled behavior still has no automated coverage.
+- Player combat methods still combine collision, damage, energy, and
+  character-specific special rules; that is intentionally deferred to Phase 6.
 
 ### Optional gameplay improvements (not confirmed bugs)
 

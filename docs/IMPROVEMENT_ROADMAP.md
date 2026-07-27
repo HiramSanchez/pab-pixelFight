@@ -121,6 +121,13 @@ payloads, fresh rounds, victory timing, and return to menu.
 
 ## Phase 5 — Player refactor
 
+**Status: completed (2026-07-26).** Immutable control schemes remove all
+player-number input branches. Named constants and small methods separate input,
+dash, gravity/bounds, facing, cooldown, animation selection, freeze lock, frame
+advance, and cleanup. Tests preserve P1/P2 controls, movement, jump, block,
+damage/energy, bounds, cooldown, and animation priority. Frame-based normal
+physics and held-key attacks intentionally remain unchanged.
+
 - **Objective:** Make Player understandable and configurable without changing
   combat results.
 - **Files:** `player.py` → `entities/player.py`, `settings.py`, control/character
@@ -206,6 +213,6 @@ payloads, fresh rounds, victory timing, and return to menu.
 
 ## Recommended immediate next slice
 
-Begin Phase 5 as a separate Player-internal refactor: introduce control
-mappings/constants and split input, physics, combat requests, and animation
-selection into small methods while preserving the tested scene/rule behavior.
+Begin Phase 6 as a separate combat-model change: define attack data and active
+frames, configurable hitboxes, and one-hit tracking behind tests. Treat balance
+changes independently from the new data structure.

@@ -54,6 +54,11 @@ layout. `main.py` is now a minimal entry point; Game owns the only event loop
 and GameContext supplies screen/assets/fonts/time. Battle result remains a
 sub-state rather than an unnecessary fourth scene.
 
+Phase 5 keeps `player.py` at the repository root while its internals stabilize.
+ControlScheme configuration now lives in `settings.py`; Player uses small
+input/physics/animation methods. Moving it to `entities/` should remain a later
+mechanical package change rather than being mixed with combat behavior.
+
 Split `scenes.py` and move into `src/` only when file size or packaging makes
 the benefit concrete.
 

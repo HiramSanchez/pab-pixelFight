@@ -180,13 +180,15 @@ priority and freeze's early return determine what is visible.
 
 ### Movement and facing
 
-`move()` polls the entire keyboard state. Normal input is permitted only when
-not attacking, alive, round active, and not frozen. Walk speed is 10 px per
-battle frame, gravity is 2 velocity units per frame, and jump velocity begins
-at -30. The floor is `screen_height - 110`; only horizontal screen edges and
-the floor are enforced. There is no ceiling, player-player collision, knockback,
-or stage geometry. Facing is recalculated from opponent center positions after
-movement.
+`move()` polls the entire keyboard state, then delegates in fixed order to
+configured input, dash, gravity, bounds, facing, cooldown, and position
+updates. Normal input is permitted only when not attacking, alive, round active,
+and not frozen. `ControlScheme` mappings remove separate P1/P2 branches while
+preserving the original keys. Walk speed is 10 px per battle frame, gravity is
+2 velocity units per frame, and jump velocity begins at -30. The floor is
+`screen_height - 110`; only horizontal screen edges and the floor are enforced.
+There is no ceiling, player-player collision, knockback, or stage geometry.
+Facing is recalculated from opponent center positions after movement.
 
 ### Attacks and collision
 
@@ -200,6 +202,10 @@ Attack input is disabled while `attacking`; when the selected attack animation
 ends, a 30-frame cooldown begins. If a key remains held, the attack will fire
 again when the cooldown reaches zero. Cooldown decrements only when `move()` is
 called, so it pauses during countdown/result and stretches when FPS falls.
+
+Animation selection, frame advancement, freeze locking, and animation-end
+cleanup are separate methods. Named constants map directly to the ten existing
+spritesheet rows; priority and 50 ms frame timing are unchanged.
 
 ### Health, energy, block
 
