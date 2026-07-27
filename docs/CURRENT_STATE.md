@@ -292,6 +292,17 @@ selection, and battle mutable state are instance fields reset by `enter()`;
 constants and fighter configuration live in `settings.py`. Game is the only
 owner of the clock, event queue, active scene, and display update.
 
+## Automated verification
+
+Pytest runs 103 deterministic tests without opening a visible game window.
+Shared test builders create lightweight Players with in-memory animation
+surfaces, and a pressed-key adapter exercises both control schemes. Coverage
+includes assets/caching, round resolution and complete reset state, scene
+transitions, Player defaults and animation priority, stat bounds, attack
+acceptance and cleanup, every configured combat move, and timed freeze, burn,
+and dash behavior. `scripts/smoke_test.py` remains a separate SDL-dummy startup
+and Quit check rather than part of the unit suite.
+
 ## README accuracy at baseline
 
 The description, screenshots, Python version, and Pygame version generally

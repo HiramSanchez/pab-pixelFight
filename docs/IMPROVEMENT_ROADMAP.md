@@ -172,6 +172,14 @@ special.
 
 ## Phase 7 — Test suite
 
+**Status: completed (2026-07-26).** The headless suite now contains 103
+deterministic tests. Shared Player construction and pressed-key adapters support
+focused rule tests. Coverage includes stat bounds, insufficient-energy and
+busy/cooldown attack rejection, later-frame contact, activation cleanup, dash
+expiry, freeze animation locking, hit recovery, and every round-reset timing
+field, in addition to the existing scoring, scenes, assets, effects, and combat
+coverage. No production behavior changed.
+
 - **Objective:** Cover game rules broadly without requiring a window.
 - **Files:** `tests/`, `pytest.ini` if useful, a separate development
   requirements file, extracted pure logic.
@@ -221,6 +229,6 @@ special.
 
 ## Recommended immediate next slice
 
-Begin Phase 7 as a separate test-suite change: consolidate reusable builders
-and fill remaining deterministic rule coverage without changing gameplay or
-requiring a graphical window.
+Begin Phase 8 as a separately scoped user-experience change. Choose and
+characterize one interaction first—such as pause/resume or leaving a match—
+before modifying scene transitions or adding feedback.

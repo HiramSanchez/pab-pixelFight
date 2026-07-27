@@ -403,9 +403,10 @@ Severity indicates impact on reliability or future change, not effort.
   result/stat/status logic and add small tests before risky refactors.
 - **Change risk:** Low for requirements; medium when seams are introduced.
 - **Dependencies:** PF-005, PF-012.
-- **Status:** Partially resolved across Phases 0–1. Runtime and development
-  requirements, pytest configuration, 15 focused tests, asset validation, and a
-  headless startup check now exist. Broader coverage remains future work.
+- **Status:** Resolved across Phases 0–7. Runtime and development requirements,
+  pytest configuration, 103 deterministic tests, asset validation, and a
+  separate headless startup check cover the documented game rules and runtime
+  boundaries.
 
 ### PF-026 — README run path and badge were incorrect
 

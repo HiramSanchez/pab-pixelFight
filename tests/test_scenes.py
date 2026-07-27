@@ -176,3 +176,28 @@ def test_non_final_round_recreates_fresh_players_after_result(scene_context):
     assert scene.fighter_1.health == 100
     assert scene.fighter_1.energy == 10
     assert scene.round_over is False
+
+
+def test_reset_round_restores_all_round_timing_fields(scene_context):
+    context, fake_time = scene_context
+    fake_time.current = 4321
+    scene = BattleScene(context)
+    scene.enter((FIGHTERS[0], FIGHTERS[3]))
+    scene.round_over = True
+    scene.intro_count = 0
+    scene.fight_displayed = True
+    scene.fight_display_start = 100
+    scene.last_count_update = 200
+    scene.round_over_time = 300
+    scene.winner_name = "Raruto"
+
+    scene.reset_round()
+
+    assert scene.round_start_time == 4321
+    assert scene.round_over is False
+    assert scene.intro_count == 3
+    assert scene.fight_displayed is False
+    assert scene.fight_display_start == 0
+    assert scene.last_count_update == 4321
+    assert scene.round_over_time == 0
+    assert scene.winner_name is None

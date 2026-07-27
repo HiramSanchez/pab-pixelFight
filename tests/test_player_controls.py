@@ -12,14 +12,6 @@ from player import (
 from settings import PLAYER_CONTROLS
 
 
-class PressedKeys:
-    def __init__(self, *pressed):
-        self.pressed = set(pressed)
-
-    def __getitem__(self, key):
-        return key in self.pressed
-
-
 @pytest.fixture(scope="module", autouse=True)
 def pygame_runtime():
     pygame.init()
@@ -53,14 +45,17 @@ def resolve_attack_on_active_frame(player):
 
 
 @pytest.mark.parametrize("player_number", [1, 2])
-def test_control_scheme_moves_each_player_left_and_right(player_number):
+def test_control_scheme_moves_each_player_left_and_right(
+    player_number,
+    pressed_keys,
+):
     player = make_player(player_number)
     target = make_player(2 if player_number == 1 else 1, x=700)
     controls = PLAYER_CONTROLS[player_number]
 
-    left_dx = player.handle_input(PressedKeys(controls.left), None, target)
+    left_dx = player.handle_input(pressed_keys(controls.left), None, target)
     player.running = False
-    right_dx = player.handle_input(PressedKeys(controls.right), None, target)
+    right_dx = player.handle_input(pressed_keys(controls.right), None, target)
 
     assert left_dx == -MOVE_SPEED
     assert right_dx == MOVE_SPEED
@@ -68,13 +63,16 @@ def test_control_scheme_moves_each_player_left_and_right(player_number):
 
 
 @pytest.mark.parametrize("player_number", [1, 2])
-def test_right_input_keeps_original_precedence_when_both_are_held(player_number):
+def test_right_input_keeps_original_precedence_when_both_are_held(
+    player_number,
+    pressed_keys,
+):
     player = make_player(player_number)
     target = make_player(2 if player_number == 1 else 1, x=700)
     controls = PLAYER_CONTROLS[player_number]
 
     dx = player.handle_input(
-        PressedKeys(controls.left, controls.right),
+        pressed_keys(controls.left, controls.right),
         None,
         target,
     )
@@ -83,13 +81,16 @@ def test_right_input_keeps_original_precedence_when_both_are_held(player_number)
 
 
 @pytest.mark.parametrize("player_number", [1, 2])
-def test_block_prevents_movement_jump_and_attacks(player_number):
+def test_block_prevents_movement_jump_and_attacks(
+    player_number,
+    pressed_keys,
+):
     player = make_player(player_number)
     target = make_player(2 if player_number == 1 else 1, x=260)
     controls = PLAYER_CONTROLS[player_number]
 
     dx = player.handle_input(
-        PressedKeys(
+        pressed_keys(
             controls.block,
             controls.right,
             controls.jump,
@@ -107,12 +108,15 @@ def test_block_prevents_movement_jump_and_attacks(player_number):
 
 
 @pytest.mark.parametrize("player_number", [1, 2])
-def test_jump_uses_configured_key_and_original_velocity(player_number):
+def test_jump_uses_configured_key_and_original_velocity(
+    player_number,
+    pressed_keys,
+):
     player = make_player(player_number)
     target = make_player(2 if player_number == 1 else 1, x=700)
 
     player.handle_input(
-        PressedKeys(PLAYER_CONTROLS[player_number].jump),
+        pressed_keys(PLAYER_CONTROLS[player_number].jump),
         None,
         target,
     )
@@ -122,13 +126,13 @@ def test_jump_uses_configured_key_and_original_velocity(player_number):
 
 
 @pytest.mark.parametrize("player_number", [1, 2])
-def test_attack_key_mapping_is_symmetric(player_number):
+def test_attack_key_mapping_is_symmetric(player_number, pressed_keys):
     player = make_player(player_number)
     target_x = 260 if player_number == 1 else 140
     target = make_player(2 if player_number == 1 else 1, x=target_x)
 
     player.handle_input(
-        PressedKeys(PLAYER_CONTROLS[player_number].attack_1),
+        pressed_keys(PLAYER_CONTROLS[player_number].attack_1),
         None,
         target,
     )

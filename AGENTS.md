@@ -60,6 +60,10 @@ transforms are created once during display setup.
 explicit burn/freeze tint precedence. `TimedEffect` is used for freeze and dash;
 `BurnEffect` calculates all due damage ticks from elapsed milliseconds.
 
+`tests/conftest.py` provides lightweight Player construction and simulated
+pressed-key input for deterministic rule tests. The pytest suite is headless;
+the SDL-dummy startup/Quit check remains a separate script.
+
 Character dictionaries and cached animations flow from `SelectionScene` through
 a transition into `BattleScene`, then into each Player. Every combat frame,
 BattleScene passes the opponent and its `round_over` state to `Player.move()`.
