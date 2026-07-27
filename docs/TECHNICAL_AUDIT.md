@@ -88,6 +88,8 @@ Severity indicates impact on reliability or future change, not effort.
   side-effect-light.
 - **Change risk:** Medium; requires preserving current initialization order.
 - **Dependencies:** PF-013; enables tests.
+- **Status:** Resolved in Phase 4. Importing `main` is side-effect free; Game
+  owns initialization and guaranteed shutdown.
 
 ### PF-006 — Selector reloads and re-slices images every frame
 
@@ -212,6 +214,8 @@ Severity indicates impact on reliability or future change, not effort.
   application loop incrementally.
 - **Change risk:** High if done at once; low-to-medium scene by scene.
 - **Dependencies:** PF-005 and future architecture migration.
+- **Status:** Resolved in Phase 4. Game owns one loop and explicit transitions
+  among MenuScene, SelectionScene, BattleScene, and Quit.
 
 ### PF-014 — Broad mutable global state
 
@@ -226,6 +230,9 @@ Severity indicates impact on reliability or future change, not effort.
   `BattleScene` object over incremental steps.
 - **Change risk:** High for a bulk move; medium incrementally.
 - **Dependencies:** PF-013.
+- **Status:** Resolved for application/UI/match state in Phase 4. Mutable scene
+  state is held by scene instances and shared runtime dependencies by
+  GameContext. Player-internal flags remain for Phase 5.
 
 ### PF-015 — Player input logic is duplicated
 
@@ -417,6 +424,8 @@ Severity indicates impact on reliability or future change, not effort.
   state.
 - **Change risk:** Low-to-medium.
 - **Dependencies:** PF-013.
+- **Status:** Resolved in Phase 4. BattleScene uses its existing two-second
+  result timer and continues processing global Quit events.
 
 ### PF-028 — `exit()` concern is not present
 

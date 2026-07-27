@@ -5,7 +5,7 @@ import pygame
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-MAIN_FILE = PROJECT_ROOT / "main.py"
+SETTINGS_FILE = PROJECT_ROOT / "settings.py"
 
 REQUIRED_ASSETS = (
     "assets/fonts/HelvetiPixel.ttf",
@@ -19,13 +19,19 @@ REQUIRED_ASSETS = (
 
 
 def load_fighter_configuration():
-    tree = ast.parse(MAIN_FILE.read_text(encoding="utf-8"), filename=str(MAIN_FILE))
+    tree = ast.parse(
+        SETTINGS_FILE.read_text(encoding="utf-8"),
+        filename=str(SETTINGS_FILE),
+    )
     for node in tree.body:
         if not isinstance(node, ast.Assign):
             continue
-        if any(isinstance(target, ast.Name) and target.id == "fighters" for target in node.targets):
+        if any(
+            isinstance(target, ast.Name) and target.id == "FIGHTERS"
+            for target in node.targets
+        ):
             return ast.literal_eval(node.value)
-    raise AssertionError("The fighters configuration was not found in main.py")
+    raise AssertionError("The FIGHTERS configuration was not found in settings.py")
 
 
 def validate_file(relative_path):

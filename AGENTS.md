@@ -10,35 +10,34 @@ more reliable, portable, and extensible in small steps.
 - Entry point: `main.py` (the repository currently has no `src/` directory).
 - Fighter model: `player.py`.
 - Runtime resources: `assets/images/` and `assets/fonts/`.
-- Current design: module-level Pygame setup, nested blocking loops, shared
-  mutable match state in `main.py`, and a small cached resource boundary.
+- Current design: one `Game` loop, three explicit scenes, Player-owned combat
+  state, and cached resource/timed-effect boundaries.
 
 ## Current architecture
 
 ### Screen and match flow
 
-1. Importing `main.py` initializes Pygame, creates a 1000×600 display, and asks
-   `AssetManager` for common images and fonts.
-2. `initial_screen()` owns the menu loop. Controls are an overlay inside that
-   same loop.
-3. `character_selection_screen()` owns the selector loop and returns two
-   character dictionaries, or `(None, None)` to return to the menu.
-4. `create_fighters()` reuses cached, scaled animation lists and creates two
-   `Player` instances.
-5. The battle loop in the `if __name__ == "__main__"` block owns the HUD,
-   countdown, timer, status-effect rendering, round recreation, victory
-   display, and events. It delegates round outcome/score rules to
-   `round_rules.py`; each Player updates its own timed effects.
-6. A completed best-of-five match returns to the main menu.
-
-There is no scene manager. Menu, selection, and battle are nested `while`
-loops. Only the outermost loop coordinates transitions.
+1. `main.py` calls `Game().run()` and has no import-time Pygame side effects.
+2. `Game` initializes/shuts down Pygame and owns the only clock, event pump,
+   display update, active scene, and transition processing.
+3. `MenuScene` owns menu buttons and the controls overlay.
+4. `SelectionScene` owns both selections and cached previews; Enter requests
+   battle with the two character dictionaries and Back requests menu.
+5. `BattleScene` owns match/round state, HUD, countdown, timer, Player creation,
+   status rendering, scoring, and a non-blocking result timer.
+6. A completed best-of-five match explicitly transitions to the main menu.
 
 ### Module responsibilities and data flow
 
-`main.py` currently handles application startup, display and fonts, character
-configuration, all scenes, selection previews, match creation, round
-timing/scoring, HUD, status-overlay placement, and shutdown.
+`main.py` is only the executable entry point. `game.py` owns application
+lifecycle and builds a `GameContext` containing the screen, assets, fonts, and
+time source. It coordinates scenes but does not implement gameplay rules.
+
+`settings.py` contains window, color, timing, and character constants.
+
+`scenes/` contains the minimal `Scene` transition contract plus menu,
+selection, and battle implementations. Scene fields replace the former
+module-level UI/match globals.
 
 `player.py` defines `Player`: sprite slicing, animation selection, input
 polling, movement/gravity, blocking, attack hitboxes and immediate damage,
@@ -57,11 +56,11 @@ transforms are created once during display setup.
 explicit burn/freeze tint precedence. `TimedEffect` is used for freeze and dash;
 `BurnEffect` calculates all due damage ticks from elapsed milliseconds.
 
-Character dictionaries and loaded spritesheets flow from `main.py` into each
-`Player`. Every frame, `main.py` passes the opponent and the global
-`round_over` flag to `Player.move()`. Players directly mutate the opponent's
-health/status and their own energy; `main.py` reads those fields to render and
-score the round.
+Character dictionaries and cached animations flow from `SelectionScene` through
+a transition into `BattleScene`, then into each Player. Every combat frame,
+BattleScene passes the opponent and its `round_over` state to `Player.move()`.
+Players directly mutate opponent health/status and their own energy;
+BattleScene reads those fields to render and score.
 
 ## Gameplay model
 
@@ -163,7 +162,7 @@ three round wins displays victory for two seconds and returns to the main menu.
 
 ## Character configuration
 
-Each dictionary in `main.py:fighters` contains:
+Each dictionary in `settings.py:FIGHTERS` contains:
 
 - `name`: display name.
 - `asset_dir`: exact case-sensitive runtime folder component.
@@ -215,8 +214,6 @@ The prioritized evidence and remediation details live in
 ### Functional bugs
 
 - Bam's dash still checks damage only at startup rather than during travel.
-- Importing `main` shuts down Pygame because final `pygame.quit()` is outside
-  the main guard.
 
 ### Performance
 
@@ -224,16 +221,10 @@ The prioritized evidence and remediation details live in
 
 ### Architecture and maintainability
 
-- Global setup/state, nested loops, and scene rendering are concentrated in
-  `main.py`.
 - Player 1/2 input branches and status branches duplicate logic.
 - Combat state is a set of overlapping booleans, not an enforced state model.
 - Test coverage currently focuses on round rules and fresh Player state; most
   Pygame-coupled behavior still has no automated coverage.
-
-### Portability
-
-- Display and asset loading occur at import time.
 
 ### Optional gameplay improvements (not confirmed bugs)
 
@@ -274,7 +265,7 @@ py -3.13 -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
-python -m py_compile main.py player.py round_rules.py asset_manager.py status_effect.py scripts/validate_assets.py scripts/smoke_test.py
+python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/smoke_test.py
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py

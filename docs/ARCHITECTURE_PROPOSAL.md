@@ -49,6 +49,11 @@ Phase 3 similarly uses a root-level `status_effect.py` with Pygame-independent
 timed records. Move it under `combat/` only during package migration; Player
 should remain the owner of active instances.
 
+Phase 4 implements the intermediate `game.py`, `settings.py`, and `scenes/`
+layout. `main.py` is now a minimal entry point; Game owns the only event loop
+and GameContext supplies screen/assets/fonts/time. Battle result remains a
+sub-state rather than an unnecessary fourth scene.
+
 Split `scenes.py` and move into `src/` only when file size or packaging makes
 the benefit concrete.
 

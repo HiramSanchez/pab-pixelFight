@@ -1,15 +1,15 @@
 # Current State
 
-This document records the behavior observed in the repository at the audit
-baseline. It describes what the code does, including inconsistencies, rather
-than a desired design.
+This document records current repository behavior after completed roadmap
+phases. It describes what the code does, including remaining inconsistencies,
+rather than a desired design.
 
 ## Repository and runtime baseline
 
-- Runtime modules exist at repository root: `main.py`, `player.py`, the pure
-  `round_rules.py`, `asset_manager.py`, and `status_effect.py`.
-- There is no `src/`, package metadata, or scene framework. Focused pytest
-  coverage exists for round rules and fresh Player state.
+- Runtime modules exist at repository root: `main.py`, `game.py`, `settings.py`,
+  `player.py`, `round_rules.py`, `asset_manager.py`, and `status_effect.py`.
+- `scenes/` contains a minimal transition contract plus menu, selection, and
+  battle scenes. There is still no `src/` package or packaging metadata.
 - Python 3.13.0 and Pygame 2.6.1 are the documented and locally validated
   versions.
 - The window is fixed at 1000×600 and the target loop rate is 60 FPS.
@@ -20,42 +20,41 @@ than a desired design.
 
 ```mermaid
 flowchart TD
-    A[Execute main.py] --> B[Initialize Pygame, display, common assets]
-    B --> C[Main menu loop]
-    C -->|Controls| D[Controls overlay]
+    A[Execute main.py] --> B[Game initializes Pygame, display, context, scenes]
+    B --> C[MenuScene]
+    C -->|Controls| D[Controls overlay in MenuScene]
     D -->|Back| C
     C -->|Exit / window close| X[pygame.quit + SystemExit]
-    C -->|Play| E[Character selector loop]
-    E -->|Back click| C
-    E -->|Enter| F[Reset score and create Players]
-    F --> G[Battle loop]
+    C -->|Play transition| E[SelectionScene]
+    E -->|Back transition| C
+    E -->|Enter + fighter payload| F[BattleScene creates match]
+    F --> G[BattleScene update/draw]
     G -->|Round winner below 3 points| H[Result for 2 seconds]
     H --> I[Recreate both Players]
     I --> G
     G -->|First player reaches 3| J[Victory for 2 seconds]
     J --> C
     G -->|Window close| X
+    B --> K[One clock, event pump, display update]
 ```
 
 ### Startup
 
-Before the `__main__` guard, `main.py` initializes all Pygame modules, opens the
-display, creates the clock, initializes timing/global values, and loads three
-images plus six font objects. Importing the module therefore has graphical I/O
-side effects. The unconditional `pygame.quit()` at the last line also shuts
-Pygame down after a non-main import.
+`main.py` only defines/calls `main()`. Constructing `Game` initializes Pygame,
+opens the fixed 1000×600 display, creates the clock/context/scenes, and enters
+MenuScene. Importing `main` does not initialize Pygame. `Game.run()` guarantees
+`pygame.quit()` in `finally`.
 
 ### Main menu and controls
 
-`initial_screen()` loads `scrolling.png` and `controls.png` each time the menu
-is entered. It scrolls two copies of the background by 0.2 px per frame and
-draws Play, Controls, and Exit rectangles. Only mouse clicks operate these
-buttons.
+`MenuScene` uses cached `scrolling.png` and `controls.png`, scrolls two copies of
+the background by 0.2 px per frame, and draws Play, Controls, and Exit
+rectangles. Only mouse clicks operate these buttons.
 
-Controls is not a separate scene: `control_show` adds a centered 900×500 image
-over the menu. While it is open, underlying buttons are still drawn and their
-click handlers remain active. The Back hit rectangle is checked even when the
-overlay is closed, although that only resets an already-false flag.
+Controls remains an overlay rather than a separate scene. While it is open,
+underlying buttons remain drawn and their click handlers remain active,
+preserving baseline behavior. Play requests SelectionScene; Exit requests the
+global Quit transition.
 
 ### Character selector
 
@@ -73,9 +72,9 @@ requested once from `AssetManager`. Each selector frame then:
 4. advances one shared preview frame index about every 100 ms;
 5. handles keyboard/mouse events.
 
-Enter records a provisional round start and returns the two shared configuration
-dictionaries. Back returns `(None, None)`. The outer loop then returns to the
-menu. The provisional time is replaced during match setup.
+Enter requests BattleScene with the two shared configuration dictionaries as
+payload. Back explicitly requests MenuScene. Entering either scene resets its
+local UI/match state.
 
 ## Match lifecycle
 
@@ -92,9 +91,9 @@ stateDiagram-v2
 
 ### Creation and round reset
 
-Match setup resets `score` to `[0, 0]`, calls `reset_round()`, stores a new
-countdown timestamp, loads each selected spritesheet, and constructs Players at
-`(200, 310)` and `(700, 310)`. Player 2 starts flipped.
+BattleScene entry resets `score` to `[0, 0]`, obtains cached animations, and
+calls `reset_round()`, which constructs Players at `(200, 310)` and
+`(700, 310)`. Player 2 starts flipped.
 
 `reset_round()` resets `round_start_time`, `round_over`, `intro_count`,
 `fight_displayed`, `fight_display_start`, `last_count_update`,
@@ -114,7 +113,7 @@ called.
 
 ### Per-frame combat order
 
-The battle loop does the following:
+The single Game loop obtains events and delta time once. BattleScene then:
 
 1. caps frame rate;
 2. calculates time remaining;
@@ -125,8 +124,7 @@ The battle loop does the following:
 6. resolves KO/timeout/draw once and applies its score delta;
 7. handles result/victory and possibly recreates players;
 8. draws cached overlays for all active burn/freeze effects;
-9. handles only the window-close event;
-10. updates the display.
+9. returns control to Game, which performs the only display update.
 
 The ordering matters: Player-owned burn damage is applied before the outcome
 resolver, so a lethal tick ends the round in the same frame. Player 1
@@ -143,10 +141,10 @@ interactions.
   processing continue.
 - Below three points, two seconds after `round_over_time`, both Players are
   recreated and countdown starts again.
-- At exactly three points, victory text is drawn, the event loop blocks for two
-  seconds with `pygame.time.wait()`, and `run` becomes false.
-- Leaving the battle loop reaches the outer loop's menu. There is no direct
-  rematch, selector, or result-scene input.
+- At exactly three points, victory text remains visible for two seconds through
+  a non-blocking timer; window-close events continue to work.
+- When that timer ends, BattleScene requests MenuScene. There is no direct
+  rematch or selector transition.
 
 ## Player behavior
 
@@ -253,20 +251,24 @@ and fragile.
 
 ```mermaid
 flowchart LR
-    PYG[pygame] --> M[main.py]
+    MAIN[main.py] --> G[game.py / Game]
+    PYG[pygame] --> G
+    G --> SC[active Scene]
+    G --> CTX[GameContext]
     PYG --> P[player.py / Player]
-    R[round_rules.py] --> M
+    R[round_rules.py] --> B[BattleScene]
     S[status_effect.py] --> P
-    S --> M
+    S --> B
     A[assets and fonts] --> AM[asset_manager.py]
-    AM --> M
-    M -->|character data, spritesheet, player number| P
-    M -->|character config and display bounds| P
+    AM --> CTX
+    CTX --> SC
+    SEL[SelectionScene] -->|fighter payload| B
+    B -->|character data and cached animations| P
     P -->|mutates health, status, energy| P
-    P -->|public fields read each frame| M
-    M -->|round state, opponent, frame delta| P
-    M -->|health and timeout| R
-    R -->|round result and score delta| M
+    P -->|public fields read each frame| B
+    B -->|round state, opponent, frame delta| P
+    B -->|health and timeout| R
+    R -->|round result and score delta| B
 ```
 
 `AssetManager` uses a `Path` rooted beside its module and caches by resolved
@@ -275,12 +277,10 @@ keys, so `Onichan` maps to `onichan` and `Bam` maps to `bam` on case-sensitive
 filesystems. Status overlay masks are also cached rather than generated pixel
 by pixel in the battle loop.
 
-Functions in `main.py` depend implicitly on module globals including `screen`,
-fonts, colors, `clock`, fighter configuration, loaded images, timer constants,
-blink state, and round state. `character_selection_screen()` declares a global
-`elapsed_time` that otherwise has no module-level definition. The battle loop
-also creates/updates global names such as `winner_name` and `round_over_time`
-through module-scope execution.
+Screen/fonts/assets/time are explicit `GameContext` dependencies. Menu,
+selection, and battle mutable state are instance fields reset by `enter()`;
+constants and fighter configuration live in `settings.py`. Game is the only
+owner of the clock, event queue, active scene, and display update.
 
 ## README accuracy at baseline
 

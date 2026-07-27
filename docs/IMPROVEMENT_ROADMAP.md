@@ -97,6 +97,12 @@ coexistence, cancellation, and 30/60/120 FPS dash distances.
 
 ## Phase 4 — Scene separation
 
+**Status: completed (2026-07-26).** Game owns one clock/event/display loop and
+explicit Menu, Selection, Battle, and Quit transitions. Controls remains a menu
+overlay; match results are a non-blocking BattleScene sub-state. Importing
+`main` is side-effect free. Tests cover menu/controls/selector transitions,
+payloads, fresh rounds, victory timing, and return to menu.
+
 - **Objective:** Replace nested loops with a small, explicit screen flow.
 - **Files:** `main.py`, `game.py`, `scenes/menu_scene.py`,
   `scenes/selection_scene.py`, `scenes/battle_scene.py`; optional result state
@@ -200,6 +206,6 @@ coexistence, cancellation, and 30/60/120 FPS dash distances.
 
 ## Recommended immediate next slice
 
-Begin Phase 4 as a separate change by introducing one application event loop
-and migrating screens incrementally. Preserve the tested round/effect rules and
-do not combine scene migration with the broader Player refactor.
+Begin Phase 5 as a separate Player-internal refactor: introduce control
+mappings/constants and split input, physics, combat requests, and animation
+selection into small methods while preserving the tested scene/rule behavior.
