@@ -1,9 +1,10 @@
-# 🎮 Pixel Fight  (pab-pixelFight)  
+# 🎮 Pixel Fight (pab-pixelFight)
 
-[![Java](https://img.shields.io/badge/Python-3.13.0-blue)](https://www.oracle.com/java/)  
+[![Python](https://img.shields.io/badge/Python-3.13.0-blue)](https://www.python.org/)
+[![Pygame](https://img.shields.io/badge/Pygame-2.6.1-green)](https://www.pygame.org/)
 
 ## 📝 Description  
-**Pixel Fight** is a simple two-player fighting game inspired by retro pixel art aesthetics. The game is built using **Python** and **Pygame**, focusing on quick fights, player vs. player mechanics, and a nostalgic vibe. This is a personal project, made with the porpuse of having fun and understand videogames logic.
+**Pixel Fight** is a simple two-player fighting game inspired by retro pixel art aesthetics. The game is built using **Python** and **Pygame**, focusing on quick fights, player vs. player mechanics, and a nostalgic vibe. This is a personal project, made for having fun and understanding video game logic.
 
 ## ⚡ Features
 - **2D movement**  
@@ -41,9 +42,9 @@ Please refer to their respective licenses for more details.
 
 ### Prerequisites  
 - Make sure you have Python installed.  
-- Install the Pygame library by running:  
+- Install the runtime dependency by running:
 ```bash
-  pip install pygame
+  python -m pip install -r requirements.txt
 ```
 ### How to Run 
 1. Clone this repository:  
@@ -52,7 +53,27 @@ Please refer to their respective licenses for more details.
  ```
 2. Run the game:
  ```bash
-   python src/main.py
+   python main.py
  ```
 
-  
+> **Current status:** Pixel Fight is playable, but its small legacy codebase is
+> now being modernized incrementally. The current behavior, known technical
+> risks, and planned architecture are documented before functional changes are
+> made.
+
+## 📚 Project Notes
+
+- [Current behavior](docs/CURRENT_STATE.md)
+- [Technical audit](docs/TECHNICAL_AUDIT.md)
+- [Improvement roadmap](docs/IMPROVEMENT_ROADMAP.md)
+- [Architecture proposal](docs/ARCHITECTURE_PROPOSAL.md)
+
+## ✅ Validation
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m py_compile main.py player.py round_rules.py scripts/validate_assets.py scripts/smoke_test.py
+python -m pytest
+python scripts/validate_assets.py
+python scripts/smoke_test.py
+```

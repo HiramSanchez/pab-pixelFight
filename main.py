@@ -1,6 +1,7 @@
 import pygame
 import time
 from player import Player
+from round_rules import apply_score, match_winner, resolve_round
 
 #============================#
 #==#  Create game window  #==#
@@ -384,10 +385,15 @@ def create_fighters(fighter_1_data, fighter_2_data):
 
 def reset_round():
     global round_start_time, round_over, intro_count, fight_displayed
+    global fight_display_start, last_count_update, round_over_time, winner_name
     round_start_time = pygame.time.get_ticks()
     round_over = False
     intro_count = 3
     fight_displayed = False
+    fight_display_start = 0
+    last_count_update = round_start_time
+    round_over_time = 0
+    winner_name = None
 
 #============================#
 #==#  Main Game Loop Call #==#
@@ -406,7 +412,6 @@ if __name__ == "__main__":
         # MATCH SETUP
         score = [0, 0]
         reset_round()
-        last_count_update = pygame.time.get_ticks()
 
         fighter_1, fighter_2, player_1_sheet, player_2_sheet = create_fighters(fighter_1_data, fighter_2_data)
 
@@ -434,19 +439,6 @@ if __name__ == "__main__":
             draw_max_energy_text(1, fighter_1.energy, 20, 55)
             draw_max_energy_text(2, fighter_2.energy, 780, 55)
 
-            # Verify if time over
-            if time_left == 0 and not round_over:
-                if fighter_1.health > fighter_2.health:
-                    winner_name = fighter_1_data['name']
-                    score[0] += 1  # P1 wins
-                elif fighter_2.health > fighter_1.health:
-                    winner_name = fighter_2_data['name']
-                    score[1] += 1  # P2 wins
-                else:
-                    winner_name = "No One"
-                round_over = True
-                round_over_time = pygame.time.get_ticks()
-
             # Count & "FIGHT!" screen logic
             if intro_count > 0:
                 draw_text(str(intro_count), timer_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3)
@@ -462,7 +454,7 @@ if __name__ == "__main__":
             elif pygame.time.get_ticks() - fight_display_start < show_fight_time:
                 draw_text(FIGHT_TEXT, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 180)
 
-            else:
+            elif time_left > 0:
                 fighter_1.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_2, round_over)
                 fighter_2.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_1, round_over)
 
@@ -472,42 +464,8 @@ if __name__ == "__main__":
             fighter_1.draw(screen)
             fighter_2.draw(screen)
 
-            # Score & Round Control Logic (KO)
-            if round_over == False:
-                if fighter_1.alive == False:
-                    score[1] += 1  # P2 wins
-                    winner_name = fighter_2_data['name']
-                    round_over = True
-                    round_over_time = pygame.time.get_ticks()
-                elif fighter_2.alive == False:
-                    score[0] += 1  # P1 wins
-                    winner_name = fighter_1_data['name']
-                    round_over = True
-                    round_over_time = pygame.time.get_ticks()
-
-            else:
-                # Victory handling
-                if score[0] == 3 or score[1] == 3:
-                    draw_text(winner_name, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 180)
-                    draw_text(VICTORY_TEXT, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 130)
-                    pygame.display.update()
-                    pygame.time.wait(2000)
-                    run = False  # end match -> go back to selection
-                else:
-                    draw_text(winner_name, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 180)
-                    draw_text(WINS_TEXT, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 130)
-
-                if pygame.time.get_ticks() - round_over_time > ROUND_OVER_COOLDOWN and run:
-                    round_start_time = pygame.time.get_ticks()
-                    round_over = False
-                    intro_count = 3
-                    fight_displayed = False
-                    last_count_update = pygame.time.get_ticks()
-                    fighter_1 = Player(1, 200, 310, False, fighter_1_data, player_1_sheet, fighter_1_data['animation_steps'])
-                    fighter_2 = Player(2, 700, 310, True, fighter_2_data, player_2_sheet, fighter_2_data['animation_steps'])
-
-            # Manage burn damage (keep original logic)
-            if fighter_1.burned or fighter_2.burned:
+            # Manage burn damage before resolving the round
+            if not round_over and (fighter_1.burned or fighter_2.burned):
                 if fighter_1.burned:
                     current_time = pygame.time.get_ticks()
                     if current_time - fighter_1.burn_start_time >= (fighter_1.burn_interval * (fighter_1.burn_ticks + 1)):
@@ -522,6 +480,41 @@ if __name__ == "__main__":
                         fighter_2.burn_ticks += 1
                         if fighter_2.burn_ticks >= 3:
                             fighter_2.burned = False
+
+            # Resolve KO and timeout through one symmetric rule
+            if not round_over:
+                round_result = resolve_round(
+                    fighter_1.health,
+                    fighter_2.health,
+                    time_expired=time_left == 0,
+                )
+                if round_result is not None:
+                    score = apply_score(score, round_result)
+                    if round_result.winner_index == 0:
+                        winner_name = fighter_1_data['name']
+                    elif round_result.winner_index == 1:
+                        winner_name = fighter_2_data['name']
+                    else:
+                        winner_name = "No One"
+                    round_over = True
+                    round_over_time = pygame.time.get_ticks()
+
+            if round_over:
+                # Victory handling
+                if match_winner(score) is not None:
+                    draw_text(winner_name, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 180)
+                    draw_text(VICTORY_TEXT, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 130)
+                    pygame.display.update()
+                    pygame.time.wait(2000)
+                    run = False  # end match -> go back to main menu
+                else:
+                    draw_text(winner_name, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 180)
+                    draw_text(WINS_TEXT, count_font, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 130)
+
+                if pygame.time.get_ticks() - round_over_time > ROUND_OVER_COOLDOWN and run:
+                    reset_round()
+                    fighter_1 = Player(1, 200, 310, False, fighter_1_data, player_1_sheet, fighter_1_data['animation_steps'])
+                    fighter_2 = Player(2, 700, 310, True, fighter_2_data, player_2_sheet, fighter_2_data['animation_steps'])
 
             # Manage frozen/burned status color effect (keep original logic)
             if fighter_1.frozen or fighter_2.frozen or fighter_1.burned or fighter_2.burned:
