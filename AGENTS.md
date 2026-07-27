@@ -233,33 +233,13 @@ assets/
 
 ## Known issues
 
-The prioritized evidence and remediation details live in
-`docs/TECHNICAL_AUDIT.md`.
-
-### Functional bugs
-
-- No confirmed functional bug remains from Phases 0–8.
-
-### Performance
-
-- Normal movement, gravity, and attack cooldowns remain frame-based.
-
-### Architecture and maintainability
-
-- Combat state is a set of overlapping booleans, not an enforced state model.
-- Player still owns combat resolution and overlapping boolean action states;
-  further state-model changes are outside the completed combat-data phase.
-
-### Optional gameplay improvements (not confirmed bugs)
-
-- Fighter-to-fighter body collision, audio, and configurable controls.
-- Decide explicit policies for timeout ties and simultaneous KO before changing
-  them.
+The remaining prioritized work and release blockers live in
+`docs/PENDING_WORK.md`.
 
 ## Development rules
 
 1. Do not change existing behavior without documenting the intended change.
-2. Keep the game executable after every phase.
+2. Keep the game executable after every change.
 3. Avoid mass refactors in one change; migrate one responsibility at a time.
 4. Separate bug fixes, refactors, and features into independently verifiable
    changes.
@@ -275,8 +255,9 @@ The prioritized evidence and remediation details live in
     patterns or abstractions with only one use.
 11. Add tests for combat, scoring, timers, and state logic that can run without
     opening a graphical window.
-12. Record important architecture decisions in `docs/` and keep
-    `docs/CURRENT_STATE.md` aligned with behavior.
+12. Record important architecture decisions in `docs/ARCHITECTURE.md`, keep
+    `docs/GAMEPLAY.md` aligned with behavior, and track remaining work only in
+    `docs/PENDING_WORK.md`.
 
 ## Validation commands
 

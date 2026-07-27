@@ -1,8 +1,8 @@
-# Current State
+# Gameplay and Runtime Behavior
 
-This document records current repository behavior after completed roadmap
-phases. It describes what the code does, including remaining inconsistencies,
-rather than a desired design.
+This document records the current game and runtime behavior. It describes what
+the code does rather than a desired future design. Remaining work is tracked in
+`PENDING_WORK.md`.
 
 ## Repository and runtime baseline
 
@@ -289,44 +289,9 @@ The first request for a source frame/color/orientation creates a mask overlay;
 from the normal scaled sprite offset, which makes alignment character-specific
 and fragile.
 
-## Global state and module dependencies
-
-```mermaid
-flowchart LR
-    MAIN[pixel_fight.__main__] --> G[pixel_fight.game / Game]
-    PYG[pygame] --> G
-    G --> SC[active Scene]
-    G --> CTX[GameContext]
-    PYG --> P[pixel_fight.entities.player / Player]
-    R[pixel_fight.combat.round_rules] --> B[BattleScene]
-    S[pixel_fight.combat.status_effect] --> P
-    S --> B
-    A[assets and fonts] --> AM[pixel_fight.resources.asset_manager]
-    AM --> CTX
-    CTX --> SC
-    SEL[SelectionScene] -->|fighter payload| B
-    B -->|character data and cached animations| P
-    P -->|mutates health, status, energy| P
-    P -->|public fields read each frame| B
-    B -->|round state, opponent, frame delta| P
-    B -->|health and timeout| R
-    R -->|round result and score delta| B
-```
-
-`AssetManager` uses a `Path` rooted beside its module and caches by resolved
-path/configuration. Fighter display names are separate from exact directory
-keys, so `Onichan` maps to `onichan` and `Bam` maps to `bam` on case-sensitive
-filesystems. Status overlay masks are also cached rather than generated pixel
-by pixel in the battle loop.
-
-Screen/fonts/assets/time are explicit `GameContext` dependencies. Menu,
-selection, and battle mutable state are instance fields reset by `enter()`;
-constants and fighter configuration live in `pixel_fight.settings`. Game is
-the only owner of the clock, event queue, active scene, and display update.
-
 ## Automated verification
 
-Pytest runs 103 deterministic tests without opening a visible game window.
+Pytest runs 113 deterministic tests without opening a visible game window.
 Shared test builders create lightweight Players with in-memory animation
 surfaces, and a pressed-key adapter exercises both control schemes. Coverage
 includes assets/caching, round resolution and complete reset state, scene
@@ -334,13 +299,3 @@ transitions, Player defaults and animation priority, stat bounds, attack
 acceptance and cleanup, every configured combat move, and timed freeze, burn,
 and dash behavior. `scripts/smoke_test.py` remains a separate SDL-dummy startup
 and Quit check rather than part of the unit suite.
-
-## README and licensing accuracy
-
-The description, screenshots, Python version, and Pygame version generally
-match the repository. The original badge linked Python text to Oracle/Java and
-the run command referenced nonexistent `src/main.py`; those were historical
-documentation errors. The former blanket “free license” statement has been removed.
-`THIRD_PARTY_NOTICES.md` verifies Pixel Times New Roman as public domain and
-records all other asset provenance as unresolved rather than assuming that a
-platform-level or general store license applies.

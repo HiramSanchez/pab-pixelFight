@@ -12,6 +12,8 @@ recorded here from the first packaged preview onward.
   packaging files by responsibility.
 - Consolidated dependency, package, entry-point, and pytest configuration in
   `pyproject.toml`.
+- Replaced completed roadmap/audit documents with current architecture,
+  gameplay, release, and pending-work documentation.
 
 ## [0.1.0] - 2026-07-26
 

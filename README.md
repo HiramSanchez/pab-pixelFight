@@ -81,10 +81,9 @@ blocked until the licensing items in
 
 ## 📚 Project Notes
 
-- [Current behavior](docs/CURRENT_STATE.md)
-- [Technical audit](docs/TECHNICAL_AUDIT.md)
-- [Improvement roadmap](docs/IMPROVEMENT_ROADMAP.md)
-- [Architecture proposal](docs/ARCHITECTURE_PROPOSAL.md)
+- [Gameplay and runtime behavior](docs/GAMEPLAY.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Pending work](docs/PENDING_WORK.md)
 - [Release process](docs/RELEASING.md)
 - [Changelog](CHANGELOG.md)
 
