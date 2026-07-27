@@ -105,9 +105,10 @@ helps.
 
 ### `combat/attack.py`
 
-Do not create this just to wrap three methods. Add it in the combat phase when
-attack data gains startup/active/recovery frames, configurable hitboxes, and
-one-hit tracking. A frozen dataclass plus resolver functions is sufficient.
+Implemented in Phase 6 as a frozen attack definition plus small hitbox and
+active-window helpers. Character configuration supplies startup/active/recovery
+frames and Player retains the resolver and one-hit activation state; no combat
+inheritance hierarchy was introduced.
 
 ### `combat/status_effect.py`
 

@@ -146,6 +146,14 @@ physics and held-key attacks intentionally remain unchanged.
 
 ## Phase 6 — Combat model
 
+**Status: completed (2026-07-26).** Immutable attack definitions now configure
+damage, energy, hitbox width, animation row, and startup/active/recovery frames
+for all fighters. Explicit hurtboxes preserve the 80×180 baseline, attacks
+resolve only during active frames and at most once per activation, and Bam can
+hit on first contact during dash travel. Tests cover phase/animation agreement,
+facing, boundaries, misses, block outcomes, duplicate prevention, and every
+special.
+
 - **Objective:** Align hits with animation and allow character/move tuning.
 - **Files:** `combat/attack.py`, character config, Player/BattleScene, optional
   debug rendering.
@@ -213,6 +221,6 @@ physics and held-key attacks intentionally remain unchanged.
 
 ## Recommended immediate next slice
 
-Begin Phase 6 as a separate combat-model change: define attack data and active
-frames, configurable hitboxes, and one-hit tracking behind tests. Treat balance
-changes independently from the new data structure.
+Begin Phase 7 as a separate test-suite change: consolidate reusable builders
+and fill remaining deterministic rule coverage without changing gameplay or
+requiring a graphical window.

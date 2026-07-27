@@ -1,5 +1,10 @@
 import pygame
-from settings import PLAYER_CONTROLS
+from combat.attack import AttackKind, SpecialEffect
+from settings import (
+    ATTACK_DEFINITIONS,
+    DEFAULT_ATTACK_DEFINITIONS,
+    PLAYER_CONTROLS,
+)
 from status_effect import BurnEffect, TimedEffect
 
 
@@ -26,9 +31,9 @@ ACTION_HIT = 8
 ACTION_DEATH = 9
 
 ATTACK_NONE = 0
-ATTACK_NORMAL_1 = 1
-ATTACK_NORMAL_2 = 2
-ATTACK_SPECIAL = 3
+ATTACK_NORMAL_1 = AttackKind.NORMAL_1
+ATTACK_NORMAL_2 = AttackKind.NORMAL_2
+ATTACK_SPECIAL = AttackKind.SPECIAL
 
 
 class Player:
@@ -47,6 +52,7 @@ class Player:
         animation_steps,
         animation_list=None,
         controls=None,
+        attacks=None,
     ):
         self.player = player
         self.controls = controls or PLAYER_CONTROLS[player]
@@ -65,8 +71,8 @@ class Player:
         self.image = self.animation_list[self.action][self.frame_index]
         self.update_time = pygame.time.get_ticks()
 
-        # Gameplay rect (hitbox)
-        self.rect = pygame.Rect((x, y, 80, 180))
+        hurtbox_width, hurtbox_height = data.get("hurtbox", (80, 180))
+        self.rect = pygame.Rect((x, y, hurtbox_width, hurtbox_height))
 
         # Movement
         self.vel_y = 0
@@ -82,6 +88,13 @@ class Player:
         # Attack
         self.attack_type = ATTACK_NONE
         self.attack_cooldown = 0
+        self.attacks = attacks or ATTACK_DEFINITIONS.get(
+            self.fighter_name,
+            DEFAULT_ATTACK_DEFINITIONS,
+        )
+        self.active_attack = None
+        self.attack_target = None
+        self.attack_has_hit = False
 
         # Stats
         self.health = STARTING_HEALTH
@@ -128,6 +141,13 @@ class Player:
 
     def cancel_dash(self):
         self.dash_effect.clear()
+        if self.active_attack and self.active_attack.travels_with_dash:
+            self.clear_active_attack()
+
+    def clear_active_attack(self):
+        self.active_attack = None
+        self.attack_target = None
+        self.attack_has_hit = False
 
 
     #======================#
@@ -234,6 +254,8 @@ class Player:
             return dx
         if self.dash_effect.update(now):
             self.attack_cooldown = ATTACK_COOLDOWN_FRAMES
+            if self.active_attack and self.active_attack.travels_with_dash:
+                self.clear_active_attack()
             return dx
 
         dash_distance = self.dash_speed * (delta_time_ms / 1000)
@@ -272,15 +294,12 @@ class Player:
                 self.attack_type = ATTACK_NORMAL_1
             elif keys[self.controls.attack_2]:
                 self.attack_type = ATTACK_NORMAL_2
-            self.attack(surface, target)
+            self.begin_attack(self.attacks[self.attack_type], target)
 
     def handle_spec_attacks(self, keys, surface, target):
         if keys[self.controls.special] and self.energy >= MAX_STAT_VALUE:
             self.attack_type = ATTACK_SPECIAL
-            if self.fighter_name == "Bam":
-                self.dash_attack(surface, target)
-            else:
-                self.freeze_attack(surface, target)
+            self.begin_attack(self.attacks[AttackKind.SPECIAL], target)
 
 
     #===================#
@@ -309,6 +328,8 @@ class Player:
             return
 
         self.select_animation_action()
+        self.resolve_active_attack()
+        self.clamp_stats()
         self.advance_animation(now)
         self.finish_animation()
 
@@ -352,7 +373,9 @@ class Player:
         elif self.hit:
             self.update_action(ACTION_HIT)
         elif self.attacking:
-            if self.attack_type == ATTACK_NORMAL_1:
+            if self.active_attack is not None:
+                self.update_action(self.active_attack.animation_action)
+            elif self.attack_type == ATTACK_NORMAL_1:
                 self.update_action(ACTION_ATTACK_1)
             elif self.attack_type == ATTACK_NORMAL_2:
                 self.update_action(ACTION_ATTACK_2)
@@ -382,6 +405,12 @@ class Player:
         if self.action in (ACTION_ATTACK_1, ACTION_ATTACK_2, ACTION_SPECIAL):
             self.attacking = False
             self.attack_cooldown = ATTACK_COOLDOWN_FRAMES
+            if not (
+                self.active_attack
+                and self.active_attack.travels_with_dash
+                and self.dashing
+            ):
+                self.clear_active_attack()
         if self.action == ACTION_HIT:
             self.hit = False
             self.attacking = False
@@ -391,83 +420,63 @@ class Player:
     #=================#
     #==#  Attacks  #==#
     #=================#
-    def dash_attack(self, surface, target):
-        if self.attack_cooldown == 0:
-            self.attacking = True
+    def begin_attack(self, definition, target):
+        if self.attack_cooldown != 0 or self.attacking:
+            return False
+        if self.energy < definition.energy_cost:
+            return False
+
+        self.attacking = True
+        self.attack_type = definition.kind
+        self.active_attack = definition
+        self.attack_target = target
+        self.attack_has_hit = False
+        self.energy -= definition.energy_cost
+
+        if definition.travels_with_dash:
             self.dash_effect.start(pygame.time.get_ticks())
-            self.energy -= SPECIAL_ENERGY_COST
+        return True
 
-            attack_width = self.rect.width * 3.25
-            attacking_rect = pygame.Rect(
-                self.rect.centerx - (attack_width * self.flip),
-                self.rect.y,
-                attack_width,
-                self.rect.height,
-            )
+    def resolve_active_attack(self):
+        definition = self.active_attack
+        target = self.attack_target
+        if definition is None or target is None or self.attack_has_hit:
+            return False
+        if not definition.is_active(self.frame_index, self.dashing):
+            return False
 
-            if attacking_rect.colliderect(target.rect):
-                if not target.blocking:
-                    if self.fighter_name == "Bam":
-                        target.health -= 35
-                        target.hit = True
+        hitbox = definition.create_hitbox(self.rect, self.flip)
+        if not hitbox.colliderect(target.rect):
+            return False
+
+        self.attack_has_hit = True
+        if target.blocking:
+            self.energy += definition.energy_on_block
+            return True
+
+        target.health -= definition.damage
+        self.energy += definition.energy_on_hit
+        self.apply_attack_effect(definition, target)
+        target.hit = True
+        return True
+
+    def apply_attack_effect(self, definition, target):
+        now = pygame.time.get_ticks()
+        if definition.effect is SpecialEffect.BURN:
+            target.apply_burn(now)
+        elif definition.effect is SpecialEffect.HEAL:
+            self.health += definition.heal
+        elif definition.effect is SpecialEffect.FREEZE:
+            target.apply_freeze(now)
+
+    def dash_attack(self, surface, target):
+        return self.begin_attack(self.attacks[AttackKind.SPECIAL], target)
 
     def attack(self, surface, target):
-        if self.attack_cooldown == 0:
-            self.attacking = True
-
-            if self.attack_type == ATTACK_NORMAL_1:
-                attack_width = self.rect.width * 1.5
-                damage = 10
-            else:
-                attack_width = self.rect.width * 1.9
-                damage = 6
-
-            attacking_rect = pygame.Rect(
-                self.rect.centerx - (attack_width * self.flip),
-                self.rect.y,
-                attack_width,
-                self.rect.height,
-            )
-
-            if attacking_rect.colliderect(target.rect):
-                if target.blocking:
-                    self.energy += 10
-                else:
-                    target.health -= damage
-                    target.hit = True
-                    self.energy += 20
+        return self.begin_attack(self.attacks[self.attack_type], target)
 
     def freeze_attack(self, surface, target):
-        if self.attack_cooldown == 0:
-            self.attacking = True
-            attack_width = self.rect.width * 1.5
-            damage = 15
-            healDamage = 20
-            healSelf = 15
-            self.energy -= SPECIAL_ENERGY_COST
-
-            attacking_rect = pygame.Rect(
-                self.rect.centerx - (attack_width * self.flip),
-                self.rect.y,
-                attack_width,
-                self.rect.height,
-            )
-
-            if attacking_rect.colliderect(target.rect):
-                if not target.blocking:
-                    if self.fighter_name == "Onichan":
-                        target.apply_freeze(pygame.time.get_ticks())
-                        target.health -= damage
-                        target.hit = True
-
-                    elif self.fighter_name == "Starlight":
-                        target.health -= healDamage
-                        self.health += healSelf
-                        target.hit = True
-
-                    elif self.fighter_name == "Raruto":
-                        target.apply_burn(pygame.time.get_ticks())
-                        target.hit = True
+        return self.begin_attack(self.attacks[AttackKind.SPECIAL], target)
 
 
     #================#

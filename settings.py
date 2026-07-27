@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import pygame
 
+from combat.attack import AttackDefinition, AttackKind, SpecialEffect
 
 @dataclass(frozen=True)
 class ControlScheme:
@@ -32,10 +33,10 @@ BLUE = (4, 28, 49)
 CYAN = (15, 158, 234)
 
 FIGHTERS = [
-    {"name": "Raruto", "asset_dir": "Raruto", "size": 128, "scale": 1.6, "offset": [34, 15], "freeze_offset": [-55, -23], "animation_steps": [6, 8, 8, 10, 3, 4, 4, 2, 3, 4]},
-    {"name": "Starlight", "asset_dir": "Starlight", "size": 128, "scale": 2.1, "offset": [45, 41], "freeze_offset": [-95, -87], "animation_steps": [7, 7, 8, 8, 4, 10, 10, 7, 3, 6]},
-    {"name": "Onichan", "asset_dir": "onichan", "size": 128, "scale": 2, "offset": [44, 38], "freeze_offset": [-88, -75], "animation_steps": [5, 6, 7, 8, 4, 4, 4, 4, 3, 6]},
-    {"name": "Bam", "asset_dir": "bam", "size": 128, "scale": 1.8, "offset": [40, 27], "freeze_offset": [-73, -50], "animation_steps": [6, 8, 8, 12, 6, 4, 3, 2, 2, 4]},
+    {"name": "Raruto", "asset_dir": "Raruto", "size": 128, "scale": 1.6, "offset": [34, 15], "freeze_offset": [-55, -23], "hurtbox": [80, 180], "animation_steps": [6, 8, 8, 10, 3, 4, 4, 2, 3, 4]},
+    {"name": "Starlight", "asset_dir": "Starlight", "size": 128, "scale": 2.1, "offset": [45, 41], "freeze_offset": [-95, -87], "hurtbox": [80, 180], "animation_steps": [7, 7, 8, 8, 4, 10, 10, 7, 3, 6]},
+    {"name": "Onichan", "asset_dir": "onichan", "size": 128, "scale": 2, "offset": [44, 38], "freeze_offset": [-88, -75], "hurtbox": [80, 180], "animation_steps": [5, 6, 7, 8, 4, 4, 4, 4, 3, 6]},
+    {"name": "Bam", "asset_dir": "bam", "size": 128, "scale": 1.8, "offset": [40, 27], "freeze_offset": [-73, -50], "hurtbox": [80, 180], "animation_steps": [6, 8, 8, 12, 6, 4, 3, 2, 2, 4]},
 ]
 
 PLAYER_CONTROLS = {
@@ -58,3 +59,59 @@ PLAYER_CONTROLS = {
         special=pygame.K_SLASH,
     ),
 }
+
+
+def normal_attack(kind, action, damage, width, phases):
+    return AttackDefinition(
+        kind=kind,
+        animation_action=action,
+        damage=damage,
+        energy_cost=0,
+        hitbox_width=width,
+        startup_frames=phases[0],
+        active_frames=phases[1],
+        recovery_frames=phases[2],
+        energy_on_hit=20,
+        energy_on_block=10,
+    )
+
+
+def special_attack(damage, width, phases, effect, heal=0):
+    return AttackDefinition(
+        kind=AttackKind.SPECIAL,
+        animation_action=6,
+        damage=damage,
+        energy_cost=100,
+        hitbox_width=width,
+        startup_frames=phases[0],
+        active_frames=phases[1],
+        recovery_frames=phases[2],
+        effect=effect,
+        heal=heal,
+    )
+
+
+ATTACK_DEFINITIONS = {
+    "Raruto": {
+        AttackKind.NORMAL_1: normal_attack(AttackKind.NORMAL_1, 4, 10, 1.5, (1, 1, 1)),
+        AttackKind.NORMAL_2: normal_attack(AttackKind.NORMAL_2, 5, 6, 1.9, (1, 1, 2)),
+        AttackKind.SPECIAL: special_attack(0, 1.5, (1, 1, 2), SpecialEffect.BURN),
+    },
+    "Starlight": {
+        AttackKind.NORMAL_1: normal_attack(AttackKind.NORMAL_1, 4, 10, 1.5, (1, 1, 2)),
+        AttackKind.NORMAL_2: normal_attack(AttackKind.NORMAL_2, 5, 6, 1.9, (3, 2, 5)),
+        AttackKind.SPECIAL: special_attack(20, 1.5, (3, 2, 5), SpecialEffect.HEAL, heal=15),
+    },
+    "Onichan": {
+        AttackKind.NORMAL_1: normal_attack(AttackKind.NORMAL_1, 4, 10, 1.5, (1, 1, 2)),
+        AttackKind.NORMAL_2: normal_attack(AttackKind.NORMAL_2, 5, 6, 1.9, (1, 1, 2)),
+        AttackKind.SPECIAL: special_attack(15, 1.5, (1, 1, 2), SpecialEffect.FREEZE),
+    },
+    "Bam": {
+        AttackKind.NORMAL_1: normal_attack(AttackKind.NORMAL_1, 4, 10, 1.5, (2, 1, 3)),
+        AttackKind.NORMAL_2: normal_attack(AttackKind.NORMAL_2, 5, 6, 1.9, (1, 1, 2)),
+        AttackKind.SPECIAL: special_attack(35, 3.25, (0, 3, 0), SpecialEffect.DASH),
+    },
+}
+
+DEFAULT_ATTACK_DEFINITIONS = ATTACK_DEFINITIONS["Raruto"]

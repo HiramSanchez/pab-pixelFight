@@ -192,10 +192,13 @@ Facing is recalculated from opponent center positions after movement.
 
 ### Attacks and collision
 
-All players share an 80×180 body rectangle, independent of sprite scale.
-Attack rectangles extend from the attacker's center in the facing direction
-and retain the body height. Normal/special damage is evaluated immediately at
-activation. The `surface` arguments to attack methods are unused; debug hitbox
+Each fighter explicitly configures an 80×180 hurtbox, preserving the previous
+geometry independently of sprite scale. Every move has an immutable
+`AttackDefinition` with damage, energy rules, width, animation row, and
+startup/active/recovery frames. Attack rectangles extend from the attacker's
+center in the facing direction and retain the hurtbox height. Collision,
+damage, and effects resolve only during active frames, with one result allowed
+per activation. The compatibility `surface` arguments are unused; debug hitbox
 drawing is absent.
 
 Attack input is disabled while `attacking`; when the selected attack animation
@@ -229,10 +232,11 @@ Raruto starts or refreshes the target's `BurnEffect`. Player applies every tick
 due at 2, 4, and 6 seconds, including multiple overdue ticks after a slow frame.
 It applies no damage after round end.
 
-Bam starts a 200 ms `TimedEffect`, spends energy, and checks a
-3.25-body-width hitbox once. Movement uses 1200 px/s and frame delta, preserving
-20 px/frame at 60 FPS. Freeze, death, and round end cancel travel. Collision is
-still not checked during travel.
+Bam starts a 200 ms `TimedEffect`, spends energy, and carries a
+3.25-hurtbox-width attack during the dash. Movement uses 1200 px/s and frame
+delta, preserving 20 px/frame at 60 FPS. The first overlap during travel deals
+35 damage, and one-hit tracking prevents repeats. Freeze, death, and round end
+cancel travel.
 
 Burn and freeze are orthogonal and may coexist. The battle renderer loops over
 both players, drawing burn first and freeze second. `AssetManager` caches mask

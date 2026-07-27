@@ -41,10 +41,11 @@ selection, and battle implementations. Scene fields replace the former
 module-level UI/match globals.
 
 `player.py` defines `Player`: sprite slicing, configured input polling,
-movement/gravity, blocking, attack hitboxes and immediate damage, energy,
-animation state, and ownership of dash/freeze/burn instances. Movement and
-animation orchestration delegate to small methods; no input branch depends on
-player number.
+movement/gravity, blocking, attack activation/resolution, energy, animation
+state, and ownership of dash/freeze/burn instances. `combat/attack.py` defines
+immutable move data and hitbox/frame-window rules. Movement and animation
+orchestration delegate to small methods; no input branch depends on player
+number.
 
 `round_rules.py` is deliberately independent from Pygame. It resolves KO,
 timeout, draws, score deltas, and the first-to-three match threshold. It does
@@ -122,9 +123,9 @@ Index 1 is loaded but never selected by the current code.
 - Normal attack 2 uses 1.9 times body width, deals 6 damage, and grants the same
   energy.
 - A blocked normal attack deals no damage and grants the attacker 10 energy.
-- Damage and effects are resolved when an attack starts, not on an active
-  animation frame. Each attack can resolve only once because `attacking`
-  prevents a new attack until its animation and cooldown finish.
+- Each configured attack has startup, active, and recovery frames whose sum
+  matches its animation row. Damage and effects resolve only during active
+  frames, and one-hit tracking limits each activation to one collision result.
 - The cooldown is 30 calls to `move()`, therefore approximately 0.5 seconds at
   60 FPS rather than a time-based duration.
 - Energy is clamped down to 100 in `update()`. Specials require `>= 100` and
@@ -132,8 +133,9 @@ Index 1 is loaded but never selected by the current code.
   has an upper clamp but no explicit lower clamp.
 - Blocking is hold-based and prevents movement, jumping, and attack input.
   There is no chip damage or defender energy gain.
-- Both players use the same 80×180 body/hurt rectangle regardless of art.
-  Attack rectangles use that body rectangle and current facing.
+- Every fighter explicitly configures an 80×180 hurtbox, preserving the
+  baseline geometry while allowing later tuning. Each move configures its own
+  attack width; rectangles use the hurtbox height and current facing.
 
 ### Character specials and statuses
 
@@ -147,8 +149,8 @@ Index 1 is loaded but never selected by the current code.
   normal input, keep gravity/screen bounds, and have their animation frame
   locked. Reapplying freeze restarts its duration.
 - **Bam:** begins a 200 ms dash at 1200 px/s (equivalent to 20 px/frame at
-  60 FPS) and deals 35 only if the initial hitbox overlaps. Dash cancels on
-  freeze, death, or round end.
+  60 FPS) and deals 35 on the first contact anywhere during travel. Dash
+  cancels on freeze, death, or round end.
 - Burn and freeze may coexist. Both players render their active effects; burn
   tint is drawn first and freeze tint second. Overlays are cached by animation
   frame, color, and orientation.
@@ -174,7 +176,12 @@ Each dictionary in `settings.py:FIGHTERS` contains:
 - `scale`: render scale applied to every extracted cell.
 - `offset`: scaled sprite displacement from the shared body rectangle.
 - `freeze_offset`: unscaled screen displacement used only for the tint overlay.
+- `hurtbox`: collision rectangle width and height.
 - `animation_steps`: frame count for rows 0 through 9 in the index table above.
+
+`settings.ATTACK_DEFINITIONS` provides three explicit moves per fighter with
+damage, energy cost/reward, hitbox width, animation row, startup/active/recovery
+frames, and optional special effect.
 
 | Character | `asset_dir` | `size` | `scale` | `offset` | `freeze_offset` | `animation_steps` |
 |---|---|---:|---:|---|---|---|
@@ -217,7 +224,7 @@ The prioritized evidence and remediation details live in
 
 ### Functional bugs
 
-- Bam's dash still checks damage only at startup rather than during travel.
+- No confirmed functional bug remains from Phases 0–6.
 
 ### Performance
 
@@ -226,13 +233,13 @@ The prioritized evidence and remediation details live in
 ### Architecture and maintainability
 
 - Combat state is a set of overlapping booleans, not an enforced state model.
-- Player combat methods still combine collision, damage, energy, and
-  character-specific special rules; that is intentionally deferred to Phase 6.
+- Player still owns combat resolution and overlapping boolean action states;
+  further state-model changes are outside the completed combat-data phase.
 
 ### Optional gameplay improvements (not confirmed bugs)
 
-- Character-specific hurtboxes/attack data, frame-based active hits, collision
-  between fighters, pause/rematch navigation, audio, and configurable controls.
+- Fighter-to-fighter body collision, pause/rematch navigation, audio, and
+  configurable controls.
 - Decide explicit policies for timeout ties and simultaneous KO before changing
   them.
 
@@ -268,7 +275,7 @@ py -3.13 -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
-python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/smoke_test.py
+python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py combat/__init__.py combat/attack.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/smoke_test.py
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py

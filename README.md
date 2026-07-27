@@ -72,7 +72,7 @@ Please refer to their respective licenses for more details.
 
 ```bash
 python -m pip install -r requirements-dev.txt
-python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/smoke_test.py
+python -m py_compile main.py game.py settings.py player.py round_rules.py asset_manager.py status_effect.py combat/__init__.py combat/attack.py scenes/base.py scenes/menu_scene.py scenes/selection_scene.py scenes/battle_scene.py scripts/validate_assets.py scripts/smoke_test.py
 python -m pytest
 python scripts/validate_assets.py
 python scripts/smoke_test.py

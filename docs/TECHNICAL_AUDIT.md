@@ -184,6 +184,8 @@ Severity indicates impact on reliability or future change, not effort.
   startup-range attack.
 - **Change risk:** High because balance changes.
 - **Dependencies:** Combat phase/hit tracking.
+- **Status:** Resolved in Phase 6. Bam's hitbox travels for the dash duration
+  and one-hit tracking permits at most one collision result.
 
 ### PF-012 — Round outcome logic is duplicated and order-sensitive
 
@@ -291,6 +293,8 @@ Severity indicates impact on reliability or future change, not effort.
   frames and one-hit-per-activation tracking.
 - **Change risk:** High gameplay/balance change.
 - **Dependencies:** Animation events and configurable attack definitions.
+- **Status:** Resolved in Phase 6. Explicit startup/active/recovery windows
+  align collision and effects with configured animation frames.
 
 ### PF-019 — Shared body and generated attack hitboxes
 
@@ -305,6 +309,8 @@ Severity indicates impact on reliability or future change, not effort.
   values reproducing the baseline.
 - **Change risk:** High if baseline geometry changes.
 - **Dependencies:** Combat data model and hitbox visualization tests.
+- **Status:** Resolved in Phase 6. Every fighter and move has explicit
+  hurtbox/attack data; initial dimensions and reach preserve baseline values.
 
 ### PF-020 — Boolean states permit incompatible combinations
 

@@ -47,6 +47,11 @@ def make_player(player_number=1, x=200):
     )
 
 
+def resolve_attack_on_active_frame(player):
+    player.frame_index = player.active_attack.startup_frames
+    return player.resolve_active_attack()
+
+
 @pytest.mark.parametrize("player_number", [1, 2])
 def test_control_scheme_moves_each_player_left_and_right(player_number):
     player = make_player(player_number)
@@ -130,6 +135,8 @@ def test_attack_key_mapping_is_symmetric(player_number):
 
     assert player.attacking is True
     assert player.attack_type == ATTACK_NORMAL_1
+    assert target.health == 100
+    assert resolve_attack_on_active_frame(player) is True
     assert target.health == 90
 
 
@@ -151,6 +158,8 @@ def test_attack_one_preserves_block_damage_and_energy_rules(
     player.attack_type = ATTACK_NORMAL_1
 
     player.attack(None, target)
+    assert target.health == 100
+    assert resolve_attack_on_active_frame(player) is True
 
     assert target.health == expected_health
     assert player.energy == expected_energy
@@ -162,6 +171,8 @@ def test_attack_two_preserves_damage():
     player.attack_type = ATTACK_NORMAL_2
 
     player.attack(None, target)
+    assert target.health == 100
+    assert resolve_attack_on_active_frame(player) is True
 
     assert target.health == 94
     assert player.energy == 30
