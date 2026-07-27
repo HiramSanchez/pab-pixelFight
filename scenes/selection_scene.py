@@ -55,6 +55,8 @@ class SelectionScene(Scene):
                         FIGHTERS[self.selected_fighter_2],
                     ),
                 )
+            elif event.key == pygame.K_ESCAPE:
+                self.request_transition(SceneId.MENU)
         elif (
             event.type == pygame.MOUSEBUTTONDOWN
             and self.back_rect.collidepoint(event.pos)

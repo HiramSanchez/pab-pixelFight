@@ -49,7 +49,9 @@ MenuScene. Importing `main` does not initialize Pygame. `Game.run()` guarantees
 
 `MenuScene` uses cached `scrolling.png` and `controls.png`, scrolls two copies of
 the background by 0.2 px per frame, and draws Play, Controls, and Exit
-rectangles. Only mouse clicks operate these buttons.
+rectangles. Mouse clicks still operate them; `Up/Down` or `W/S` moves the
+highlight and Enter activates it. Escape requests Quit. Enter or Escape closes
+the controls overlay.
 
 Controls remains an overlay rather than a separate scene. While it is open,
 underlying buttons remain drawn and their click handlers remain active,
@@ -73,8 +75,8 @@ requested once from `AssetManager`. Each selector frame then:
 5. handles keyboard/mouse events.
 
 Enter requests BattleScene with the two shared configuration dictionaries as
-payload. Back explicitly requests MenuScene. Entering either scene resets its
-local UI/match state.
+payload. Back or Escape explicitly requests MenuScene. Entering either scene
+resets its local UI/match state.
 
 ## Match lifecycle
 
@@ -130,6 +132,15 @@ The ordering matters: Player-owned burn damage is applied before the outcome
 resolver, so a lethal tick ends the round in the same frame. Player 1
 movement/attack is still processed before Player 2, which can affect same-frame
 interactions.
+
+### Pause and match navigation
+
+Escape or `P` opens a battle overlay and suspends scene updates. On resume, all
+round, animation, blink, burn, freeze, and dash timestamps are shifted by the
+paused duration, so no gameplay time elapses while paused. From the overlay,
+Escape/`P` resumes, `R` starts a fresh zero-score match with the same fighters,
+`S` returns to character selection, and `M` returns to the main menu. Restart
+recreates both Players and resets every round timer/status.
 
 ### KO, timeout, scoring, and victory
 
@@ -241,6 +252,9 @@ cancel travel.
 Burn and freeze are orthogonal and may coexist. The battle renderer loops over
 both players, drawing burn first and freeze second. `AssetManager` caches mask
 surfaces by source frame, tint color, and flip direction.
+
+The HUD displays `BURN` and `FROZEN` labels for active effects, in addition to
+the existing blinking `MAX` energy feedback.
 
 ## Animation and asset management
 

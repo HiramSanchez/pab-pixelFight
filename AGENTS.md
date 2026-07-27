@@ -20,11 +20,12 @@ more reliable, portable, and extensible in small steps.
 1. `main.py` calls `Game().run()` and has no import-time Pygame side effects.
 2. `Game` initializes/shuts down Pygame and owns the only clock, event pump,
    display update, active scene, and transition processing.
-3. `MenuScene` owns menu buttons and the controls overlay.
+3. `MenuScene` owns mouse/keyboard menu navigation and the controls overlay.
 4. `SelectionScene` owns both selections and cached previews; Enter requests
    battle with the two character dictionaries and Back requests menu.
 5. `BattleScene` owns match/round state, HUD, countdown, timer, Player creation,
-   status rendering, scoring, and a non-blocking result timer.
+   status rendering, scoring, pause/navigation controls, and a non-blocking
+   result timer.
 6. A completed best-of-five match explicitly transitions to the main menu.
 
 ### Module responsibilities and data flow
@@ -84,6 +85,10 @@ BattleScene reads those fields to render and score.
 | Normal attack 2 | `3` | `.` |
 | Special attack | `4` | `/` |
 | Start selected match | `Enter` | `Enter` |
+
+Menu choices use `Up/Down` or `W/S` and `Enter`. `Escape` leaves the selector.
+During battle, `Escape` or `P` pauses. The pause overlay supports resume,
+restart match (`R`), character selection (`S`), and main menu (`M`).
 
 Inputs during combat are polled with `pygame.key.get_pressed()`, so attack keys
 are hold-driven, not edge-triggered. Each Player receives a `ControlScheme`;
@@ -228,7 +233,7 @@ The prioritized evidence and remediation details live in
 
 ### Functional bugs
 
-- No confirmed functional bug remains from Phases 0–6.
+- No confirmed functional bug remains from Phases 0–8.
 
 ### Performance
 
@@ -242,8 +247,7 @@ The prioritized evidence and remediation details live in
 
 ### Optional gameplay improvements (not confirmed bugs)
 
-- Fighter-to-fighter body collision, pause/rematch navigation, audio, and
-  configurable controls.
+- Fighter-to-fighter body collision, audio, and configurable controls.
 - Decide explicit policies for timeout ties and simultaneous KO before changing
   them.
 

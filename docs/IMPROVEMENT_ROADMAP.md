@@ -197,6 +197,15 @@ coverage. No production behavior changed.
 
 ## Phase 8 — User experience
 
+**Status: completed (2026-07-26).** Menu choices now support keyboard focus and
+activation, Escape returns from selection, and BattleScene has a non-blocking
+pause overlay. Pause freezes all gameplay clocks; players can resume, restart a
+fresh match with the same fighters, return to selection, or return to menu.
+Burn/freeze labels add visible status feedback. Tests cover keyboard
+navigation, clock/effect preservation, reset behavior, transitions, and
+labels. Audio was intentionally not added because the repository has no
+authorized audio assets or established volume policy.
+
 - **Objective:** Improve match control and feedback after core rules stabilize.
 - **Files:** scenes, HUD/UI, settings, new authorized audio assets.
 - **Expected changes:** Pause, restart/rematch, selector/menu return, keyboard
@@ -229,6 +238,6 @@ coverage. No production behavior changed.
 
 ## Recommended immediate next slice
 
-Begin Phase 8 as a separately scoped user-experience change. Choose and
-characterize one interaction first—such as pause/resume or leaving a match—
-before modifying scene transitions or adding feedback.
+Begin Phase 9 with asset provenance and release documentation before choosing a
+packaging tool. Keep audio contingent on authorized assets and an explicit
+license/volume decision.

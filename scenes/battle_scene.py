@@ -30,6 +30,8 @@ class BattleScene(Scene):
         self.flipped_skull = pygame.transform.flip(self.skull, True, False)
         self.fighter_1_data = None
         self.fighter_2_data = None
+        self.paused = False
+        self.paused_at = None
 
     def enter(self, payload=None):
         super().enter(payload)
@@ -46,7 +48,53 @@ class BattleScene(Scene):
         self.max_text_visible = True
         self.max_last_blink_time = self.context.now()
         self.match_over = False
+        self.paused = False
+        self.paused_at = None
         self.reset_round()
+
+    def handle_event(self, event):
+        if event.type != pygame.KEYDOWN or self.fighter_1_data is None:
+            return
+
+        if event.key in (pygame.K_ESCAPE, pygame.K_p):
+            if self.paused:
+                self.resume()
+            else:
+                self.paused = True
+                self.paused_at = self.context.now()
+            return
+
+        if not self.paused:
+            return
+        if event.key == pygame.K_r:
+            self.enter((self.fighter_1_data, self.fighter_2_data))
+        elif event.key == pygame.K_s:
+            self.request_transition(SceneId.SELECTION)
+        elif event.key == pygame.K_m:
+            self.request_transition(SceneId.MENU)
+
+    def resume(self):
+        pause_duration = self.context.now() - self.paused_at
+        self.round_start_time += pause_duration
+        self.last_count_update += pause_duration
+        if self.fight_displayed:
+            self.fight_display_start += pause_duration
+        if self.round_over:
+            self.round_over_time += pause_duration
+        self.max_last_blink_time += pause_duration
+
+        for fighter in (self.fighter_1, self.fighter_2):
+            fighter.update_time += pause_duration
+            for effect in (
+                fighter.dash_effect,
+                fighter.freeze_effect,
+                fighter.burn_effect,
+            ):
+                if effect.started_at is not None:
+                    effect.started_at += pause_duration
+
+        self.paused = False
+        self.paused_at = None
 
     def create_players(self):
         self.fighter_1 = Player(
@@ -139,6 +187,8 @@ class BattleScene(Scene):
     def update(self, delta_time):
         if self.fighter_1_data is None:
             return
+        if self.paused:
+            return
 
         now = self.context.now()
         elapsed_time = now - self.round_start_time
@@ -218,7 +268,7 @@ class BattleScene(Scene):
     def draw_max_energy(self, player, energy, x, y):
         if energy < 100:
             return
-        now = self.context.now()
+        now = self.paused_at if self.paused else self.context.now()
         if now - self.max_last_blink_time >= 500:
             self.max_text_visible = not self.max_text_visible
             self.max_last_blink_time = now
@@ -269,6 +319,23 @@ class BattleScene(Scene):
         self.draw_skulls(2, self.score[1], 580, 60)
         self.draw_max_energy(1, self.fighter_1.energy, 20, 55)
         self.draw_max_energy(2, self.fighter_2.energy, 780, 55)
+        self.draw_state_indicators(self.fighter_1, 120)
+        self.draw_state_indicators(self.fighter_2, 880)
+
+    def draw_state_indicators(self, fighter, x):
+        labels = []
+        if fighter.burned:
+            labels.append(("BURN", RED))
+        if fighter.frozen:
+            labels.append(("FROZEN", CYAN))
+        for index, (label, color) in enumerate(labels):
+            self.context.draw_text(
+                label,
+                "small_button",
+                color,
+                x,
+                105 + index * 28,
+            )
 
     def draw_status_effects(self, fighter, fighter_data):
         for color in active_tints(fighter.burned, fighter.frozen):
@@ -323,6 +390,32 @@ class BattleScene(Scene):
                 SCREEN_HEIGHT / 2 - 130,
             )
 
+    def draw_pause_overlay(self):
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        self.context.screen.blit(overlay, (0, 0))
+        self.context.draw_text(
+            "PAUSED",
+            "count",
+            YELLOW,
+            SCREEN_WIDTH / 2,
+            190,
+        )
+        options = (
+            "Esc / P - Resume",
+            "R - Restart match",
+            "S - Character select",
+            "M - Main menu",
+        )
+        for index, option in enumerate(options):
+            self.context.draw_text(
+                option,
+                "small_button",
+                WHITE,
+                SCREEN_WIDTH / 2,
+                290 + index * 45,
+            )
+
     def draw(self):
         if self.fighter_1_data is None:
             return
@@ -332,4 +425,7 @@ class BattleScene(Scene):
         self.fighter_2.draw(self.context.screen)
         self.draw_status_effects(self.fighter_1, self.fighter_1_data)
         self.draw_status_effects(self.fighter_2, self.fighter_2_data)
-        self.draw_round_text(self.context.now())
+        now = self.paused_at if self.paused else self.context.now()
+        self.draw_round_text(now)
+        if self.paused:
+            self.draw_pause_overlay()
